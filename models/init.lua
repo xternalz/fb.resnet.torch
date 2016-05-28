@@ -28,7 +28,7 @@ function M.setup(opt, checkpoint)
       print('Loading model from file: ' .. opt.retrain)
       model = torch.load(opt.retrain)
    else
-      print('=> Creating model from file: models/' .. opt.netType .. '.lua')
+      -- print('=> Creating model from file: models/' .. opt.netType .. '.lua')
       model = require('models/' .. opt.netType)(opt)
    end
 

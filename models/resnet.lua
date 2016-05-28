@@ -131,7 +131,7 @@ local function createModel(opt)
       assert((depth - 2) % 6 == 0, 'depth should be one of 20, 32, 44, 56, 110, 1202')
       local n = (depth - 2) / 6
       iChannels = 16
-      print(' | ResNet-' .. depth .. ' CIFAR-10')
+      -- print(' | ResNet-' .. depth .. ' CIFAR-10')
 
       -- The ResNet CIFAR-10 model
       model:add(Convolution(3,16,3,3,1,1,1,1))
