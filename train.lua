@@ -33,8 +33,8 @@ function Trainer:train(epoch, dataloader)
    -- Trains the model for a single epoch
    self.optimState.learningRate = self:learningRate(epoch)
 
-   local timer = torch.Timer()
-   local dataTimer = torch.Timer()
+   -- local timer = torch.Timer()
+   -- local dataTimer = torch.Timer()
 
    local function feval()
       return self.criterion.output, self.gradParams
@@ -48,7 +48,7 @@ function Trainer:train(epoch, dataloader)
    -- set the batch norm to training mode
    self.model:training()
    for n, sample in dataloader:run() do
-      local dataTime = dataTimer:time().real
+      -- local dataTime = dataTimer:time().real
 
       -- Copy input and target to the GPU
       self:copyInputs(sample)
@@ -74,8 +74,8 @@ function Trainer:train(epoch, dataloader)
       -- check that the storage didn't get changed do to an unfortunate getParameters call
       assert(self.params:storage() == self.model:parameters()[1]:storage())
 
-      timer:reset()
-      dataTimer:reset()
+      -- timer:reset()
+      -- dataTimer:reset()
    end
 
    return top1Sum / N, top5Sum / N, lossSum / N
@@ -84,8 +84,8 @@ end
 function Trainer:test(epoch, dataloader)
    -- Computes the top-1 and top-5 err on the validation set
 
-   local timer = torch.Timer()
-   local dataTimer = torch.Timer()
+   -- local timer = torch.Timer()
+   -- local dataTimer = torch.Timer()
    local size = dataloader:size()
 
    local nCrops = self.opt.tenCrop and 10 or 1
@@ -94,7 +94,7 @@ function Trainer:test(epoch, dataloader)
 
    self.model:evaluate()
    for n, sample in dataloader:run() do
-      local dataTime = dataTimer:time().real
+      -- local dataTime = dataTimer:time().real
 
       -- Copy input and target to the GPU
       self:copyInputs(sample)
@@ -110,8 +110,8 @@ function Trainer:test(epoch, dataloader)
       -- print((' | Test: [%d][%d/%d]    Time %.3f  Data %.3f  top1 %7.3f (%7.3f)  top5 %7.3f (%7.3f)'):format(
       --    epoch, n, size, timer:time().real, dataTime, top1, top1Sum / N, top5, top5Sum / N))
 
-      timer:reset()
-      dataTimer:reset()
+      -- timer:reset()
+      -- dataTimer:reset()
    end
    self.model:training()
 
