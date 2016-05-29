@@ -15,6 +15,7 @@ local models = require 'models/init'
 local Trainer = require 'train'
 local opts = require 'opts'
 local checkpoints = require 'checkpoints'
+local multiverso = require 'multiverso'
 
 torch.setdefaulttensortype('torch.FloatTensor')
 torch.setnumthreads(1)
@@ -22,6 +23,11 @@ torch.setnumthreads(1)
 local opt = opts.parse(arg)
 torch.manualSeed(opt.manualSeed)
 cutorch.manualSeedAll(opt.manualSeed)
+
+if opt.multiverso then
+   multiverso.init()
+   cutorch.setDevice(multiverso.worker_id() + 1)
+end
 
 -- Load previous checkpoint, if it exists
 local checkpoint, optimState = checkpoints.latest(opt)
@@ -62,8 +68,22 @@ for epoch = startEpoch, opt.nEpochs do
 
    -- checkpoints.save(epoch, model, trainer.optimState, bestModel)
 
-   print(('%4d, %6.3f, %6.3f, %8.3f'):format(
-      epoch, testTop1, testTop5, timer:time().real))
+   if opt.multiverso then
+      if multiverso.worker_id() == 0 then
+         print(('%4d, %6.3f, %6.3f, %8.3f'):format(
+            epoch, testTop1, testTop5, timer:time().real))
+      end
+   else
+      print(('%4d, %6.3f, %6.3f, %8.3f'):format(
+         epoch, testTop1, testTop5, timer:time().real))
+   end
 end
 
-print(string.format(' * Finished top1: %6.3f  top5: %6.3f', bestTop1, bestTop5))
+if opt.multiverso then
+   if multiverso.worker_id() == 0 then
+      print(string.format(' * Finished top1: %6.3f  top5: %6.3f', bestTop1, bestTop5))
+   end
+   multiverso.shutdown()
+else
+   print(string.format(' * Finished top1: %6.3f  top5: %6.3f', bestTop1, bestTop5))
+end

@@ -13,6 +13,7 @@ local optim = require 'optim'
 
 local M = {}
 local Trainer = torch.class('resnet.Trainer', M)
+local multiverso = require('multiverso')
 
 function Trainer:__init(model, criterion, opt, optimState)
    self.model = model
@@ -27,6 +28,18 @@ function Trainer:__init(model, criterion, opt, optimState)
    }
    self.opt = opt
    self.params, self.gradParams = model:getParameters()
+   if self.opt.multiverso then
+      self.tbh = multiverso.ArrayTableHandler:new(self.params:size(1))
+      self.worker_id = multiverso.worker_id()
+      self.is_master = self.worker_id == 0
+      if self.is_master then
+          self.tbh:add(self.params)
+          multiverso.barrier()
+      else
+          multiverso.barrier()
+          self.params:copy(self.tbh:get())
+      end
+   end
 end
 
 function Trainer:train(epoch, dataloader)
@@ -60,7 +73,14 @@ function Trainer:train(epoch, dataloader)
       self.criterion:backward(self.model.output, self.target)
       self.model:backward(self.input, self.criterion.gradInput)
 
-      optim.sgd(feval, self.params, self.optimState)
+      if self.opt.multiverso then
+         local params_cache = self.params:clone()
+         optim.sgd(feval, self.params, self.optimState)
+         self.tbh:add(self.params - params_cache)
+         self.params:copy(self.tbh:get())
+      else
+         optim.sgd(feval, self.params, self.optimState)
+      end
 
       local top1, top5 = self:computeScore(output, sample.target, 1)
       top1Sum = top1Sum + top1
@@ -76,6 +96,10 @@ function Trainer:train(epoch, dataloader)
 
       -- timer:reset()
       -- dataTimer:reset()
+   end
+
+   if self.opt.multiverso then
+      multiverso.barrier()
    end
 
    return top1Sum / N, top5Sum / N, lossSum / N
@@ -161,6 +185,9 @@ function Trainer:copyInputs(sample)
 end
 
 function Trainer:learningRate(epoch)
+   if self.opt.multiverso then
+      epoch = epoch * multiverso.num_workers()
+   end
    -- Training schedule
    local decay = 0
    if self.opt.dataset == 'imagenet' then

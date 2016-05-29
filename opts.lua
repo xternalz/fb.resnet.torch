@@ -46,6 +46,7 @@ function M.parse(arg)
    cmd:option('-shareGradInput',  'false', 'Share gradInput tensors to reduce memory usage')
    cmd:option('-resetClassifier', 'false', 'Reset the fully connected layer for fine-tuning')
    cmd:option('-nClasses',         0,      'Number of classes in the dataset')
+   cmd:option('-multiverso',      'false', 'Use multiverso or not')
    cmd:text()
 
    local opt = cmd:parse(arg or {})
@@ -54,6 +55,7 @@ function M.parse(arg)
    opt.tenCrop = opt.tenCrop ~= 'false'
    opt.shareGradInput = opt.shareGradInput ~= 'false'
    opt.resetClassifier = opt.resetClassifier ~= 'false'
+   opt.multiverso = opt.multiverso ~= 'false'
 
    if opt.dataset == 'imagenet' then
       -- Handle the most common case of missing -data flag
