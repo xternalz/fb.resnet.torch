@@ -15,7 +15,6 @@ local models = require 'models/init'
 local Trainer = require 'train'
 local opts = require 'opts'
 local checkpoints = require 'checkpoints'
-local multiverso = require 'multiverso'
 
 torch.setdefaulttensortype('torch.FloatTensor')
 torch.setnumthreads(1)
@@ -23,6 +22,8 @@ torch.setnumthreads(1)
 local opt = opts.parse(arg)
 torch.manualSeed(opt.manualSeed)
 cutorch.manualSeedAll(opt.manualSeed)
+
+local multiverso = opt.multiverso and require 'multiverso'
 
 if opt.multiverso then
    multiverso.init()

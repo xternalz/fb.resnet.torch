@@ -13,7 +13,6 @@ local optim = require 'optim'
 
 local M = {}
 local Trainer = torch.class('resnet.Trainer', M)
-local multiverso = require('multiverso')
 
 function Trainer:__init(model, criterion, opt, optimState)
    self.model = model
@@ -29,14 +28,15 @@ function Trainer:__init(model, criterion, opt, optimState)
    self.opt = opt
    self.params, self.gradParams = model:getParameters()
    if self.opt.multiverso then
-      self.tbh = multiverso.ArrayTableHandler:new(self.params:size(1))
-      self.worker_id = multiverso.worker_id()
+      self.multiverso = require('multiverso')
+      self.tbh = self.multiverso.ArrayTableHandler:new(self.params:size(1))
+      self.worker_id = self.multiverso.worker_id()
       self.is_master = self.worker_id == 0
       if self.is_master then
           self.tbh:add(self.params)
-          multiverso.barrier()
+          self.multiverso.barrier()
       else
-          multiverso.barrier()
+          self.multiverso.barrier()
           self.params:copy(self.tbh:get())
       end
    end
@@ -99,7 +99,7 @@ function Trainer:train(epoch, dataloader)
    end
 
    if self.opt.multiverso then
-      multiverso.barrier()
+      self.multiverso.barrier()
    end
 
    return top1Sum / N, top5Sum / N, lossSum / N
@@ -186,7 +186,7 @@ end
 
 function Trainer:learningRate(epoch)
    if self.opt.multiverso then
-      epoch = epoch * multiverso.num_workers()
+      epoch = epoch * self.multiverso.num_workers()
    end
    -- Training schedule
    local decay = 0
