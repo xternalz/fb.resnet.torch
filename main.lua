@@ -26,7 +26,7 @@ cutorch.manualSeedAll(opt.manualSeed)
 
 if opt.multiverso then
    multiverso.init()
-   cutorch.setDevice(multiverso.worker_id() + 1)
+   cutorch.setDevice(multiverso.worker_id() % cutorch.getDeviceCount() + 1)
 end
 
 -- Load previous checkpoint, if it exists
