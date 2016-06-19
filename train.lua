@@ -30,6 +30,7 @@ function Trainer:__init(model, criterion, opt, optimState)
    if self.opt.multiverso then
       self.multiverso = require('multiverso')
       self.tbh = self.multiverso.ArrayTableHandler:new(self.params:size(1))
+      self.num_workers = self.multiverso.num_workers()
       self.worker_id = self.multiverso.worker_id()
       self.is_master = self.worker_id == 0
       if self.is_master then
@@ -184,9 +185,6 @@ function Trainer:copyInputs(sample)
 end
 
 function Trainer:learningRate(epoch)
-   if self.opt.multiverso then
-      epoch = epoch * self.multiverso.num_workers()
-   end
    -- Training schedule
    local decay = 0
    if self.opt.dataset == 'imagenet' then
@@ -194,7 +192,12 @@ function Trainer:learningRate(epoch)
    elseif self.opt.dataset == 'cifar10' then
       decay = epoch >= 122 and 2 or epoch >= 81 and 1 or 0
    end
-   return self.opt.LR * math.pow(0.1, decay)
+   learningRate = self.opt.LR * math.pow(0.1, decay)
+   if self.opt.multiverso then
+      return learningRate / self.num_workers
+   else
+      return learningRate
+   end
 end
 
 return M.Trainer
