@@ -77,6 +77,9 @@ function Trainer:train(epoch, dataloader)
          local params_cache = self.params:clone()
          optim.sgd(feval, self.params, self.optimState)
          self.tbh:add(self.params - params_cache)
+         if n == trainSize then
+            self.multiverso.barrier()
+         end
          self.params:copy(self.tbh:get())
       else
          optim.sgd(feval, self.params, self.optimState)
@@ -96,10 +99,6 @@ function Trainer:train(epoch, dataloader)
 
       -- timer:reset()
       -- dataTimer:reset()
-   end
-
-   if self.opt.multiverso then
-      self.multiverso.barrier()
    end
 
    return top1Sum / N, top5Sum / N, lossSum / N
