@@ -185,6 +185,9 @@ function Trainer:copyInputs(sample)
 end
 
 function Trainer:learningRate(epoch)
+   if self.opt.multiverso then
+      epoch = epoch * self.num_workers
+   end
    -- Training schedule
    local decay = 0
    if self.opt.dataset == 'imagenet' then
@@ -192,12 +195,7 @@ function Trainer:learningRate(epoch)
    elseif self.opt.dataset == 'cifar10' then
       decay = epoch >= 122 and 2 or epoch >= 81 and 1 or 0
    end
-   learningRate = self.opt.LR * math.pow(0.1, decay)
-   if self.opt.multiverso then
-      return learningRate / self.num_workers
-   else
-      return learningRate
-   end
+   return self.opt.LR * math.pow(0.1, decay)
 end
 
 return M.Trainer
