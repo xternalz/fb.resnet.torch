@@ -185,9 +185,6 @@ function Trainer:copyInputs(sample)
 end
 
 function Trainer:learningRate(epoch)
-   if self.opt.multiverso then
-      epoch = epoch * self.num_workers
-   end
    -- Training schedule
    local decay = 0
    if self.opt.dataset == 'imagenet' then
