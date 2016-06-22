@@ -30,6 +30,7 @@ function Trainer:__init(model, criterion, opt, optimState)
    if self.opt.multiverso then
       self.multiverso = require('multiverso')
       self.tbh = self.multiverso.ArrayTableHandler:new(self.params:size(1))
+      self.num_workers = self.multiverso.num_workers()
       self.worker_id = self.multiverso.worker_id()
       self.is_master = self.worker_id == 0
       if self.is_master then
@@ -77,6 +78,9 @@ function Trainer:train(epoch, dataloader)
          local params_cache = self.params:clone()
          optim.sgd(feval, self.params, self.optimState)
          self.tbh:add(self.params - params_cache)
+         if n == trainSize then
+            self.multiverso.barrier()
+         end
          self.params:copy(self.tbh:get())
       else
          optim.sgd(feval, self.params, self.optimState)
@@ -96,10 +100,6 @@ function Trainer:train(epoch, dataloader)
 
       -- timer:reset()
       -- dataTimer:reset()
-   end
-
-   if self.opt.multiverso then
-      self.multiverso.barrier()
    end
 
    return top1Sum / N, top5Sum / N, lossSum / N
@@ -185,9 +185,6 @@ function Trainer:copyInputs(sample)
 end
 
 function Trainer:learningRate(epoch)
-   if self.opt.multiverso then
-      epoch = epoch * self.multiverso.num_workers()
-   end
    -- Training schedule
    local decay = 0
    if self.opt.dataset == 'imagenet' then
