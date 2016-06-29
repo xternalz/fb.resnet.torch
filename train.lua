@@ -34,7 +34,7 @@ function Trainer:__init(model, criterion, opt, optimState)
       self.worker_id = self.multiverso.worker_id()
       self.is_master = self.worker_id == 0
       if self.is_master then
-          self.tbh:add(self.params)
+          self.tbh:add(self.params, true)
           self.multiverso.barrier()
       else
           self.multiverso.barrier()
