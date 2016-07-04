@@ -29,17 +29,12 @@ function Trainer:__init(model, criterion, opt, optimState)
    self.params, self.gradParams = model:getParameters()
    if self.opt.multiverso then
       self.multiverso = require('multiverso')
-      self.tbh = self.multiverso.ArrayTableHandler:new(self.params:size(1))
       self.num_workers = self.multiverso.num_workers()
       self.worker_id = self.multiverso.worker_id()
       self.is_master = self.worker_id == 0
-      if self.is_master then
-          self.tbh:add(self.params, true)
-          self.multiverso.barrier()
-      else
-          self.multiverso.barrier()
-          self.params:copy(self.tbh:get())
-      end
+      self.tbh = self.multiverso.ArrayTableHandler:new(self.params:size(1), self.params)
+      self.multiverso.barrier()
+      self.params:copy(self.tbh:get())
    end
 end
 
