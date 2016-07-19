@@ -26,7 +26,7 @@ cutorch.manualSeedAll(opt.manualSeed)
 local multiverso = opt.multiverso and require 'multiverso'
 
 if opt.multiverso then
-   multiverso.init(false)
+   multiverso.init(opt.sync)
    cutorch.setDevice(multiverso.worker_id() % cutorch.getDeviceCount() + 1)
 end
 
