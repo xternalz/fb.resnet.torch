@@ -23,6 +23,7 @@ local opt = opts.parse(arg)
 torch.manualSeed(opt.manualSeed)
 cutorch.manualSeedAll(opt.manualSeed)
 
+package.cpath = package.cpath .. ';' .. opt.multiversoPath .. '/?.so'
 local multiverso = opt.multiverso and require 'multiverso'
 
 if opt.multiverso then

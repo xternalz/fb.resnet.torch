@@ -63,6 +63,7 @@ function Trainer:train(epoch, dataloader)
       self:copyInputs(sample)
 
       local output = self.model:forward(self.input):float()
+      local batchSize = output:size(1)
       local loss = self.criterion:forward(self.model.output, self.target)
 
       self.model:zeroGradParameters()
@@ -119,6 +120,7 @@ function Trainer:test(epoch, dataloader)
       self:copyInputs(sample)
 
       local output = self.model:forward(self.input):float()
+      local batchSize = output:size(1) / nCrops
       local loss = self.criterion:forward(self.model.output, self.target)
 
       local top1, top5 = self:computeScore(output, sample.target, nCrops)

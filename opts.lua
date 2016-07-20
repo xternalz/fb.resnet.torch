@@ -52,6 +52,7 @@ function M.parse(arg)
    cmd:option('-nClasses',         0,      'Number of classes in the dataset')
    ---------- multiverso options ----------------------------------
    cmd:option('-multiverso',      'false', 'Use multiverso or not')
+   cmd:option('-multiversoPath',  '/mnt/ssd/multiverso/build/src', 'multiverso library path')
    cmd:option('-sync',      'false', 'Use multiverso sync mode or not')
    cmd:text()
 
