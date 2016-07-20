@@ -27,7 +27,6 @@ local multiverso = opt.multiverso and require 'multiverso'
 
 if opt.multiverso then
    multiverso.init(opt.sync)
-   cutorch.setDevice(multiverso.worker_id() % cutorch.getDeviceCount() + 1)
 end
 
 -- Load previous checkpoint, if it exists
