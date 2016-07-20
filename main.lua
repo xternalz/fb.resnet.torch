@@ -56,21 +56,20 @@ for epoch = startEpoch, opt.nEpochs do
    -- Train for a single epoch
    local trainTop1, trainTop5, trainLoss = trainer:train(epoch, trainLoader)
 
-   -- Run model on validation set
-   local testTop1, testTop5 = trainer:test(epoch, valLoader)
-
-   local bestModel = false
-   if testTop1 < bestTop1 then
-      bestModel = true
-      bestTop1 = testTop1
-      bestTop5 = testTop5
-      -- print(' * Best model ', testTop1, testTop5)
-   end
-
    -- checkpoints.save(epoch, model, trainer.optimState, bestModel, opt)
 
    if opt.multiverso then
       if multiverso.worker_id() == 0 then
+         -- Run model on validation set
+         local testTop1, testTop5 = trainer:test(epoch, valLoader)
+
+         local bestModel = false
+         if testTop1 < bestTop1 then
+            bestModel = true
+            bestTop1 = testTop1
+            bestTop5 = testTop5
+            -- print(' * Best model ', testTop1, testTop5)
+         end
          print(('%4d, %6.3f, %6.3f, %8.3f'):format(
             epoch, testTop1, testTop5, timer:time().real))
       end

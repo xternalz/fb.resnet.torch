@@ -53,10 +53,13 @@ function Trainer:train(epoch, dataloader)
    local top1Sum, top5Sum, lossSum = 0.0, 0.0, 0.0
    local N = 0
 
+   local rand_gen = torch.Generator()
+   torch.manualSeed(rand_gen, self.opt.manualSeed+epoch)
+
    -- print('=> Training epoch # ' .. epoch)
    -- set the batch norm to training mode
    self.model:training()
-   for n, sample in dataloader:run() do
+   for n, sample in dataloader:run(rand_gen) do
       -- local dataTime = dataTimer:time().real
 
       -- Copy input and target to the GPU

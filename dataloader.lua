@@ -48,6 +48,7 @@ function DataLoader:__init(dataset, opt, split)
    self.threads = threads
    self.__size = sizes[1][1]
    self.batchSize = math.floor(opt.batchSize / self.nCrops)
+   self.split = split
    if opt.multiverso then
       self.multiverso = require('multiverso')
       self.num_workers = self.multiverso.num_workers()
@@ -59,15 +60,22 @@ function DataLoader:size()
    return math.ceil(self.__size / self.batchSize)
 end
 
-function DataLoader:run()
+function DataLoader:run(rand_gen)
    local threads = self.threads
    local size, batchSize = self.__size, self.batchSize
-   local perm = torch.randperm(size)
+   local perm = torch.range(1, size)
+   if self.split == 'train' then
+      perm = torch.randperm(rand_gen, size)
+   end
 
-   if self.multiverso then
-      size = size / self.num_workers
-      perm = torch.randperm(size)
-      perm = perm + size * self.worker_id
+   if self.multiverso and self.split == 'train' then
+      local total_size = size
+      size = math.ceil(total_size / self.num_workers)
+      if (self.worker_id + 1) == self.num_workers then
+         perm = perm:narrow(1, self.worker_id * size + 1, total_size - (self.num_workers - 1) * size)
+      else
+         perm = perm:narrow(1, self.worker_id * size + 1, size)
+      end
    end
 
    local idx, sample = 1, nil
