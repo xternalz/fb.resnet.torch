@@ -14,9 +14,9 @@
 --          th extract-features.lua [MODEL] [FILE] ...
 --
 -- BATCH MODE
---          th extract-features.lua [MODEL] [BATCH_SIZE] [DIRECTORY_CONTAINING_IMAGES] 
+--          th extract-features.lua [MODEL] [BATCH_SIZE] [DIRECTORY_CONTAINING_IMAGES]
 --
-      
+
 
 require 'torch'
 require 'paths'
@@ -41,10 +41,10 @@ if not paths.filep(arg[1]) then
     io.stderr:write('Model file not found at ' .. f .. '\n')
     os.exit(1)
 end
-    
+
 
 if tonumber(arg[2]) ~= nil then -- batch mode ; collect file from directory
-    
+
     local lfs  = require 'lfs'
     batch_size = tonumber(arg[2])
     dir_path   = arg[3]
@@ -67,7 +67,7 @@ else -- single file mode ; collect file from command line
     end
 end
 
-local number_of_files = table.getn(list_of_filenames)
+local number_of_files = #list_of_filenames
 
 if batch_size > number_of_files then batch_size = number_of_files end
 
@@ -96,12 +96,12 @@ local transform = t.Compose{
 local features
 
 for i=1,number_of_files,batch_size do
-    local img_batch = torch.FloatTensor(batch_size, 3, 224, 224) -- batch numbers are the 3 channels and size of transform 
+    local img_batch = torch.FloatTensor(batch_size, 3, 224, 224) -- batch numbers are the 3 channels and size of transform
 
     -- preprocess the images for the batch
     local image_count = 0
-    for j=1,batch_size do 
-        img_name = list_of_filenames[i+j-1] 
+    for j=1,batch_size do
+        img_name = list_of_filenames[i+j-1]
 
         if img_name  ~= nil then
             image_count = image_count + 1
@@ -121,7 +121,7 @@ for i=1,number_of_files,batch_size do
 
 
    -- this is necesary because the model outputs different dimension based on size of input
-   if output:nDimension() == 1 then output = torch.reshape(output, 1, output:size(1)) end 
+   if output:nDimension() == 1 then output = torch.reshape(output, 1, output:size(1)) end
 
    if not features then
        features = torch.FloatTensor(number_of_files, output:size(2)):zero()
