@@ -69,8 +69,10 @@ function Trainer:train(epoch, dataloader)
       lossSum = lossSum + loss*batchSize
       N = N + batchSize
 
-      print((' | Epoch: [%d][%d/%d]    Time %.3f  Data %.3f  Err %1.4f  top1 %7.3f  top5 %7.3f'):format(
-         epoch, n, trainSize, timer:time().real, dataTime, loss, top1, top5))
+      if n % 100 == 0 or n == 1 then
+         print((' | Epoch: [%d][%d/%d]    Time %.3f  Data %.3f  Err %1.4f  top1 %7.3f  top5 %7.3f'):format(
+            epoch, n, trainSize, timer:time().real, dataTime, loss, top1, top5))
+      end
 
       -- check that the storage didn't get changed do to an unfortunate getParameters call
       assert(self.params:storage() == self.model:parameters()[1]:storage())
@@ -165,9 +167,9 @@ end
 function Trainer:learningRate(epoch)
    -- Training schedule
    local decay = 0
-   if self.opt.dataset == 'imagenet' then
+   if string.match(self.opt.dataset, 'imagenet') then
       decay = math.floor((epoch - 1) / 30)
-   elseif self.opt.dataset == 'cifar10' then
+   elseif string.match(self.opt.dataset, 'cifar10') then
       decay = epoch >= 122 and 2 or epoch >= 81 and 1 or 0
    end
    return self.opt.LR * math.pow(0.1, decay)

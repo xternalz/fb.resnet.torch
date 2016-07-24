@@ -19,7 +19,11 @@ local function isvalid(opt, cachePath)
    return true
 end
 
-function M.create(opt, split)
+function M.getImageInfo(opt, split)
+   local tds = nil
+   if string.match(opt.dataset, 'lmdb') then
+      tds = require 'tds'
+   end
    local cachePath = paths.concat(opt.gen, opt.dataset .. '.t7')
    if not paths.filep(cachePath) or not isvalid(opt, cachePath) then
       paths.mkdir('gen')
@@ -29,8 +33,8 @@ function M.create(opt, split)
    end
    local imageInfo = torch.load(cachePath)
 
-   local Dataset = require('datasets/' .. opt.dataset)
-   return Dataset(imageInfo, opt, split)
+   --local Dataset = require('datasets/' .. opt.dataset)
+   return imageInfo--Dataset(imageInfo, opt, split)
 end
 
 return M

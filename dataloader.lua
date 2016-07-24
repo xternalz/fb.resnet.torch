@@ -21,26 +21,28 @@ function DataLoader.create(opt)
    local loaders = {}
 
    for i, split in ipairs{'train', 'val'} do
-      local dataset = datasets.create(opt, split)
-      loaders[i] = M.DataLoader(dataset, opt, split)
+      --local dataset = datasets.create(opt, split)
+      local imageInfo = datasets.getImageInfo(opt, split)
+      loaders[i] = M.DataLoader(imageInfo, opt, split)
    end
 
    return table.unpack(loaders)
 end
 
-function DataLoader:__init(dataset, opt, split)
+function DataLoader:__init(imageInfo, opt, split)
    local manualSeed = opt.manualSeed
    local function init()
-      require('datasets/' .. opt.dataset)
+      --require('datasets/' .. opt.dataset)
    end
    local function main(idx)
       if manualSeed ~= 0 then
          torch.manualSeed(manualSeed + idx)
       end
       torch.setnumthreads(1)
-      _G.dataset = dataset
-      _G.preprocess = dataset:preprocess()
-      return dataset:size()
+      local dataset = require('datasets/' .. opt.dataset)
+      _G.dataset = dataset(imageInfo, opt, split)
+      _G.preprocess = _G.dataset:preprocess()
+      return _G.dataset:size()
    end
 
    local threads, sizes = Threads(opt.nThreads, init, main)

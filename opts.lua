@@ -63,7 +63,7 @@ function M.parse(arg)
       cmd:error('error: unable to create checkpoint directory: ' .. opt.save .. '\n')
    end
 
-   if opt.dataset == 'imagenet' then
+   if string.match(opt.dataset, 'imagenet') then
       -- Handle the most common case of missing -data flag
       local trainDir = paths.concat(opt.data, 'train')
       if not paths.dirp(opt.data) then
@@ -74,7 +74,7 @@ function M.parse(arg)
       -- Default shortcutType=B and nEpochs=90
       opt.shortcutType = opt.shortcutType == '' and 'B' or opt.shortcutType
       opt.nEpochs = opt.nEpochs == 0 and 90 or opt.nEpochs
-   elseif opt.dataset == 'cifar10' then
+   elseif string.match(opt.dataset, 'cifar10') then
       -- Default shortcutType=A and nEpochs=164
       opt.shortcutType = opt.shortcutType == '' and 'A' or opt.shortcutType
       opt.nEpochs = opt.nEpochs == 0 and 164 or opt.nEpochs

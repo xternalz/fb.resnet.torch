@@ -125,7 +125,7 @@ local function createModel(opt)
    end
 
    local model = nn.Sequential()
-   if opt.dataset == 'imagenet' then
+   if string.match(opt.dataset, 'imagenet') then
       -- Configurations for ResNet:
       --  num. residual blocks, num features, residual block function
       local cfg = {
@@ -156,7 +156,7 @@ local function createModel(opt)
       model:add(Avg(7, 7, 1, 1))
       model:add(nn.View(nFeatures):setNumInputDims(3))
       model:add(nn.Linear(nFeatures, 1000))
-   elseif opt.dataset == 'cifar10' then
+   elseif string.match(opt.dataset, 'cifar10') then
       -- Model type specifies number of layers for CIFAR-10 model
       assert((depth - 2) % 6 == 0, 'depth should be one of 20, 32, 44, 56, 110, 1202')
       local n = (depth - 2) / 6
