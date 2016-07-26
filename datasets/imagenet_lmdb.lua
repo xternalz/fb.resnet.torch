@@ -47,8 +47,8 @@ end
 function ImagenetLMDBDataset:get(idx)
    local label
 
-   key = self.keys[idx]
-   v = self.reader:get(key)
+   local key = self.keys[idx]
+   local v = self.reader:get(key)
    assert(key~=nil, "lmdb read nil key at idx="..idx)
    assert(v~=nil, "lmdb read nil value at idx="..idx.." key="..key)
 
