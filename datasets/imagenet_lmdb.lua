@@ -12,7 +12,7 @@
 local image = require 'image'
 local paths = require 'paths'
 local t = require 'datasets/transforms'
-local lmdb = require "lmdb"
+local lightningmdb = require 'lightningmdb'
 local pb = require 'pb'
 local ffi = require 'ffi'
 local tds = require 'tds'
@@ -30,13 +30,35 @@ function ImagenetLMDBDataset:__init(lmdbInfo, opt, split)
    -- caffe datum
    self.datum = pb.load_proto(self.lmdbInfo.datumText, paths.concat(opt.data, 'datum'))
 
-   -- keys and db
+   -- db and keys
+   self.env = lightningmdb.env_create()
+   local LMDB_MAP_SIZE = 1099511627776 -- 1 TB
+   self.env:set_mapsize(LMDB_MAP_SIZE)
+   local flags = lightningmdb.MDB_RDONLY + lightningmdb.MDB_NOTLS
+   local db, err = self.env:open(self.dir, flags, 0664)
+   if not db then
+     -- unable to open Database => this might be due to a permission error on
+     -- the lock file so we will try again with MDB_NOLOCK. MDB_NOLOCK is safe
+     -- in this process as we are opening the database in read-only mode.
+     -- However if another process is writing into the database we might have a
+     -- concurrency issue - note that this shouldn't happen in DIGITS since the
+     -- database is written only once during dataset creation
+     print('opening LMDB database failed with error: "' .. err .. '". Trying with MDB_NOLOCK')
+     flags = bit.bor(flags, lighningmdb.MDB_NOLOCK)
+     -- we need to close/re-open the LMDB environment
+     self.env:close()
+     self.env = lightningmdb.env_create()
+     self.env:set_mapsize(LMDB_MAP_SIZE)
+     db, err = self.envenv:open(self.dir, flags, 0664)
+     if not db then
+         error('opening LMDB database failed with error: ' .. err)
+     end
+   end
+   self.total = self.env:stat().ms_entries
+   self.txn = self.env:txn_begin(nil, lightningmdb.MDB_RDONLY)
+   self.d = self.txn:dbi_open(nil,0)
    self.keys = self.lmdbInfo[self.split].Keys
-   self.db = lmdb.env{Path = self.dir, Name = split}
-   self.db:open()
-   self.total = self.db:stat().entries
    assert(#self.keys == self.total, 'failed to initialize DB - #keys=' .. #self.keys .. ' #records='.. self.total)
-   self.reader = self.db:txn(true)
 
    -- Image dimensions
    self.ImageChannels = self.lmdbInfo.channels
@@ -45,10 +67,11 @@ function ImagenetLMDBDataset:__init(lmdbInfo, opt, split)
 end
 
 function ImagenetLMDBDataset:get(idx)
+   collectgarbage()
    local label
 
    local key = self.keys[idx]
-   local v = self.reader:get(key)
+   local v = self.txn:get(self.d, key, lightningmdb.MDB_FIRST)
    assert(key~=nil, "lmdb read nil key at idx="..idx)
    assert(v~=nil, "lmdb read nil value at idx="..idx.." key="..key)
 
@@ -98,8 +121,10 @@ function ImagenetLMDBDataset:get(idx)
 end
 
 function ImagenetLMDBDataset:close()
-   self.reader:abort()
-   self.db:close()
+   self.total = 0
+   self.env:dbi_close(self.d)
+   self.txn:abort()
+   self.env:close()
 end
 
 function ImagenetLMDBDataset:size()
