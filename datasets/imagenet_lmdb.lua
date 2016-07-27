@@ -44,7 +44,7 @@ function ImagenetLMDBDataset:__init(lmdbInfo, opt, split)
      -- concurrency issue - note that this shouldn't happen in DIGITS since the
      -- database is written only once during dataset creation
      print('opening LMDB database failed with error: "' .. err .. '". Trying with MDB_NOLOCK')
-     flags = bit.bor(flags, lighningmdb.MDB_NOLOCK)
+     flags = bit.bor(flags, lightningmdb.MDB_NOLOCK)
      -- we need to close/re-open the LMDB environment
      self.env:close()
      self.env = lightningmdb.env_create()
