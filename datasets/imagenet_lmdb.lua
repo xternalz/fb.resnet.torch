@@ -49,7 +49,7 @@ function ImagenetLMDBDataset:__init(lmdbInfo, opt, split)
      self.env:close()
      self.env = lightningmdb.env_create()
      self.env:set_mapsize(LMDB_MAP_SIZE)
-     db, err = self.envenv:open(self.dir, flags, 0664)
+     db, err = self.env:open(self.dir, flags, 0664)
      if not db then
          error('opening LMDB database failed with error: ' .. err)
      end
