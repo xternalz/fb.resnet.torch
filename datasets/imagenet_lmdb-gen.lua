@@ -61,7 +61,7 @@ local function getKeys(path, split)
    local tds = require 'tds'
    local Keys = tds.Vec()
    local i = 0
-   for k,v in all_keys(cursor,nil,lightningmdb.MDB_NEXT) do
+   for k,_ in all_keys(cursor,nil,lightningmdb.MDB_NEXT) do
      i=i+1
      Keys[i] = k
    end
@@ -74,24 +74,8 @@ end
 
 function M.exec(opt, cacheFile)
 
-   -- Caffe LMDB datum
-   local datumFile = io.open(paths.concat(opt.data, 'datum.proto'))
-   local datumText = datumFile:read("*a")
-	datumFile:close()
-
-   -- Image channels, width, height
-   local img_dim_file = torch.DiskFile(paths.concat(opt.data, 'img_dim.txt'), 'r')
-   local channels = img_dim_file:readInt()
-   local width = img_dim_file:readInt()
-   local height = img_dim_file:readInt()
-   img_dim_file:close()
-
    local info = {
       basedir = opt.data,
-      datumText = datumText,
-      channels = channels,
-      width = width,
-      height = height,
       train = {
          Keys = getKeys(paths.concat(opt.data, 'train'), 'train')
       },

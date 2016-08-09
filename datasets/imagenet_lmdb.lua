@@ -27,9 +27,6 @@ function ImagenetLMDBDataset:__init(lmdbInfo, opt, split)
    self.dir = paths.concat(opt.data, self.split)
    assert(paths.dirp(self.dir), 'directory does not exist: ' .. self.dir)
 
-   -- caffe datum
-   self.datum = pb.load_proto(self.lmdbInfo.datumText, paths.concat(opt.data, 'datum'))
-
    -- db and keys
    self.env = lightningmdb.env_create()
    local LMDB_MAP_SIZE = 1099511627776 -- 1 TB
@@ -59,63 +56,20 @@ function ImagenetLMDBDataset:__init(lmdbInfo, opt, split)
    self.d = self.txn:dbi_open(nil,0)
    self.keys = self.lmdbInfo[self.split].Keys
    assert(#self.keys == self.total, 'failed to initialize DB - #keys=' .. #self.keys .. ' #records='.. self.total)
-
-   -- Image dimensions
-   self.ImageChannels = self.lmdbInfo.channels
-   self.ImageSizeX = self.lmdbInfo.width
-   self.ImageSizeY = self.lmdbInfo.height
 end
 
 function ImagenetLMDBDataset:get(idx)
-   collectgarbage()
-   local label
-
    local key = self.keys[idx]
    local v = self.txn:get(self.d, key, lightningmdb.MDB_FIRST)
    assert(key~=nil, "lmdb read nil key at idx="..idx)
    assert(v~=nil, "lmdb read nil value at idx="..idx.." key="..key)
 
-   local total = self.ImageChannels*self.ImageSizeY*self.ImageSizeX
-   -- Tensor allocations inside loop consumes little more execution time. So allocated "x" outside with double size of an image and inside loop if any encoded image is encountered with bytes size more than Tensor size, then the Tensor is resized appropriately.
-   local x = torch.ByteTensor(total*2):contiguous() -- sometimes length of JPEG files are more than total size. So, "x" is allocated with more size to ensure that data is not truncated while copying.
-   local x_size = total * 2 -- This variable is just to avoid the calls to tensor's size() i.e., x:size(1)
-   local temp_ptr = torch.data(x) -- raw C pointer using torchffi
-
-   local msg = self.datum.Datum():Parse(v)
-
    -- label
-   label = msg.label + 1
-
-   if #msg.data > x_size then
-     x:resize(#msg.data+1) -- 1 extra byte is required to copy zero terminator i.e., '\0', by ffi.copy()
-     x_size = #msg.data
-   end
-
-   ffi.copy(temp_ptr, msg.data)
-
-   local y=nil
-   if msg.encoded==true then
-     y = image.decompress(x,self.ImageChannels,'byte'):float()
-   else
-     x = x:narrow(1,1,total):view(self.ImageChannels,self.ImageSizeY,self.ImageSizeX):float() -- using narrow() returning the reference to x tensor with the size exactly equal to total image byte size, so that view() works fine without issues
-     if self.ImageChannels == 3 then
-         -- unencoded color images are stored in BGR order => we need to swap blue and red channels (BGR->RGB)
-         y = torch.FloatTensor(self.ImageChannels,self.ImageSizeY,self.ImageSizeX)
-         y[1] = x[3]
-         y[2] = x[2]
-         y[3] = x[1]
-     else
-         y = x
-     end
-   end
-
-   -- Normalize to range 0,1
-   if torch.max(y) > 1 then
-      y:div(255)
-   end
+   local _,labelInd = string.find(key, '~.~')
+   local label = tonumber(key:sub(labelInd+1,key:len())) + 1
 
    return {
-      input = y,
+      input = image.decompress(x, 3, 'float'),
       target = label,
    }
 end
