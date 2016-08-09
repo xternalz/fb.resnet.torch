@@ -102,7 +102,7 @@ local pca = {
 function ImagenetLMDBDataset:preprocess()
    if self.split == 'train' then
       return t.Compose{
-         t.RandomSizedCrop(224),
+         t.RandomSizedCrop(0.5, 224),
          t.ColorJitter({
             brightness = 0.4,
             contrast = 0.4,
