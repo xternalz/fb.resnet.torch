@@ -50,6 +50,42 @@ function DataLoader:__init(imageInfo, opt, split)
    self.threads = threads
    self.__size = sizes[1][1]
    self.batchSize = math.floor(opt.batchSize / self.nCrops)
+   self.nIters = math.ceil(self.batchSize / self.__size)
+   self.split = split
+
+   -- organize training samples by classes
+   if split == 'train' then
+      local keys = imageInfo[split].split.Keys
+      self.classKeyInds = {}
+      self.classInds = {}
+      self.classIndPointer = {}
+      for i = 1, #keys do
+         local key = keys[i]
+         local _,labelInd = string.find(key, '~.~')
+         local label = tonumber(key:sub(labelInd+1,key:len())) + 1
+         if self.classKeyInds[label] == nil then
+            self.classKeyInds[label] = {i}
+         else
+            table.insert(self.classKeyInds[label], i)
+         end
+         if self.classInds[label] == nil then
+            self.classInds[label] = 1
+            self.classIndPointer[label] = 1
+         else
+            self.classInds[label] = self.classInds[label] + 1
+         end
+         if i % 10000 == 0 then
+            collectgarbage()
+         end
+      end
+      for i = 1, #self.classInds do
+         local numThisClass = self.classInds[i]
+         self.classInds[i] = torch.randperm(numThisClass)
+      end
+      self.classes = torch.randperm(#self.classInds)
+      self.classPointer = 1
+      collectgarbage()
+   end
 end
 
 function DataLoader:size()
@@ -61,10 +97,31 @@ function DataLoader:run()
    local size, batchSize = self.__size, self.batchSize
    local perm = torch.randperm(size)
 
-   local idx, sample = 1, nil
+   local idi, idx, sample = 1, 1, nil
    local function enqueue()
-      while idx <= size and threads:acceptsjob() do
-         local indices = perm:narrow(1, idx, math.min(batchSize, size - idx + 1))
+      while ((idx <= size and self.split == 'val') or (idi < self.nIters and self.split == 'train')) and threads:acceptsjob() do
+         local indices
+         if self.split == 'val' then
+            indices = perm:narrow(1, idx, math.min(batchSize, size - idx + 1))
+         elseif self.split == 'train' then
+            local indicesCatTable = {}
+            for k = 1, batchSize do
+               if self.classPointer > self.classes:size(1) then
+                  self.classes = torch.randperm(self.classes:size(1))
+                  self.classPointer = 1
+               end
+               local class = self.classes[self.classPointer]
+               self.classPointer = self.classPointer + 1
+               if self.classIndPointer[class] > self.classInds[class]:size(1) then
+                  self.classInds[class] = torch.randperm(self.classInds[class]:size(1))
+                  self.classIndPointer[class] = 1
+               end
+               table.insert(indicesCatTable, self.classKeyInds[self.classInds[class][self.classIndPointer[class]]])
+               self.classIndPointer[class] = self.classIndPointer[class] + 1
+            end
+            indices = torch.Tensor(indicesCatTable)
+            collectgarbage()
+         end
          threads:addjob(
             function(indices, nCrops)
                local sz = indices:size(1)
@@ -94,6 +151,7 @@ function DataLoader:run()
             self.nCrops
          )
          idx = idx + batchSize
+         idi = idi + 1
       end
    end
 
