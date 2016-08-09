@@ -96,17 +96,31 @@ function Trainer:test(epoch, dataloader)
    local N = 0
 
    self.model:evaluate()
+   -- Stochastic forward dropout during testing
+   self.model:apply(function(m)
+      if torch.type(m) == 'nn.Dropout' then
+         m.train = true
+      end
+   end)
    for n, sample in dataloader:run() do
       local dataTime = dataTimer:time().real
 
       -- Copy input and target to the GPU
       self:copyInputs(sample)
 
-      local output = self.model:forward(self.input):float()
+      -- Stochastic inference
+      local output = nil
+      for i = 1, self.opt.nStochasticSamples do
+         if output == nil then
+            output = self.model:forward(self.input):div(self.opt.nStochasticSamples)
+         else
+            output:add(self.model:forward(self.input):div(self.opt.nStochasticSamples))
+         end
+      end
       local batchSize = output:size(1) / nCrops
-      local loss = self.criterion:forward(self.model.output, self.target)
+      local loss = self.criterion:forward(output, self.target)
 
-      local top1, top5 = self:computeScore(output, sample.target, nCrops)
+      local top1, top5 = self:computeScore(output:float(), sample.target, nCrops)
       top1Sum = top1Sum + top1*batchSize
       top5Sum = top5Sum + top5*batchSize
       N = N + batchSize
