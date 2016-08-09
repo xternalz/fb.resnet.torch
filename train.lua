@@ -110,11 +110,11 @@ function Trainer:test(epoch, dataloader)
 
       -- Stochastic inference
       local output = nil
-      for i = 1, self.opt.nStochasticSamples do
+      for i = 1, self.opt.nStocSamples do
          if output == nil then
-            output = self.model:forward(self.input):div(self.opt.nStochasticSamples)
+            output = self.model:forward(self.input):div(self.opt.nStocSamples)
          else
-            output:add(self.model:forward(self.input):div(self.opt.nStochasticSamples))
+            output:add(self.model:forward(self.input):div(self.opt.nStocSamples))
          end
       end
       local batchSize = output:size(1) / nCrops
