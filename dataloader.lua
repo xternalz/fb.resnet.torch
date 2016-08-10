@@ -55,7 +55,7 @@ function DataLoader:__init(imageInfo, opt, split)
 
    -- organize training samples by classes
    if split == 'train' then
-      local keys = imageInfo[split].split.Keys
+      local keys = imageInfo[split].Keys
       self.classKeyInds = {}
       self.classInds = {}
       self.classIndPointer = {}

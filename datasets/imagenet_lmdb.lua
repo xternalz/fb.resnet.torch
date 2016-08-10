@@ -55,7 +55,7 @@ function ImagenetLMDBDataset:__init(lmdbInfo, opt, split)
    self.txn = self.env:txn_begin(nil, lightningmdb.MDB_RDONLY)
    self.d = self.txn:dbi_open(nil,0)
    self.keys = self.lmdbInfo[self.split].Keys
-   assert(#self.keys == self.total, 'failed to initialize DB - #keys=' .. #self.keys .. ' #records='.. self.total)
+   --assert(#self.keys == self.total, 'failed to initialize DB - #keys=' .. #self.keys .. ' #records='.. self.total)
 end
 
 function ImagenetLMDBDataset:get(idx)
@@ -69,7 +69,7 @@ function ImagenetLMDBDataset:get(idx)
    local label = tonumber(key:sub(labelInd+1,key:len())) + 1
 
    return {
-      input = image.decompress(x, 3, 'float'),
+      input = image.decompress(torch.deserialize(v), 3, 'float'),
       target = label,
    }
 end
@@ -102,7 +102,7 @@ local pca = {
 function ImagenetLMDBDataset:preprocess()
    if self.split == 'train' then
       return t.Compose{
-         t.RandomSizedCrop(0.5, 224),
+         t.RandomSizedCrop(1/3, 224),
          t.ColorJitter({
             brightness = 0.4,
             contrast = 0.4,

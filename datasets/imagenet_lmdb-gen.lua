@@ -29,46 +29,21 @@ local function all_keys(cursor_,key_,op_)
       end)
 end
 
-local function getKeys(path, split)
-   local lightningmdb = require 'lightningmdb'
-   env = lightningmdb.env_create()
-   local LMDB_MAP_SIZE = 1099511627776 -- 1 TB
-   env:set_mapsize(LMDB_MAP_SIZE)
-   local flags = lightningmdb.MDB_RDONLY + lightningmdb.MDB_NOTLS
-   local db, err = env:open(path, flags, 0664)
-   if not db then
-     -- unable to open Database => this might be due to a permission error on
-     -- the lock file so we will try again with MDB_NOLOCK. MDB_NOLOCK is safe
-     -- in this process as we are opening the database in read-only mode.
-     -- However if another process is writing into the database we might have a
-     -- concurrency issue - note that this shouldn't happen in DIGITS since the
-     -- database is written only once during dataset creation
-     print('opening LMDB database failed with error: "' .. err .. '". Trying with MDB_NOLOCK')
-     flags = bit.bor(flags, lighningmdb.MDB_NOLOCK)
-     -- we need to close/re-open the LMDB environment
-     env:close()
-     env = lightningmdb.env_create()
-     env:set_mapsize(LMDB_MAP_SIZE)
-     db, err = env:open(path, flags, 0664)
-     if not db then
-         error('opening LMDB database failed with error: ' .. err)
-     end
-   end
-   local total = env:stat().ms_entries
-   local txn = env:txn_begin(nil, lightningmdb.MDB_RDONLY)
-   local d = txn:dbi_open(nil,0)
-   local cursor = txn:cursor_open(d)
+local function getKeys(filelists, split)
    local tds = require 'tds'
    local Keys = tds.Vec()
-   local i = 0
-   for k,_ in all_keys(cursor,nil,lightningmdb.MDB_NEXT) do
-     i=i+1
-     Keys[i] = k
+   local k = 1
+   for f = 1, #filelists do
+      local file = io.open(filelists[f], 'r')
+      while true do
+        local line = file:read("*line")
+        if line == nil then break end
+        local separator = string.find(line, " ")
+        local key = line:sub(1,separator-1) .. '~.~' .. line:sub(separator+1, line:len())
+        Keys[k] = key
+        k = k + 1
+      end
    end
-   cursor:close()
-   env:dbi_close(d)
-   txn:abort()
-   env:close()
    return Keys
 end
 
@@ -77,10 +52,11 @@ function M.exec(opt, cacheFile)
    local info = {
       basedir = opt.data,
       train = {
-         Keys = getKeys(paths.concat(opt.data, 'train'), 'train')
+         Keys = getKeys({'datasets/places365_train_challenge_minus_extraval.txt'}, 'train')
       },
       val = {
-         Keys = getKeys(paths.concat(opt.data, 'val'), 'val')
+         Keys = getKeys({'datasets/places365_val.txt',
+                        'datasets/extra_val.txt'}, 'val')
       },
    }
 
