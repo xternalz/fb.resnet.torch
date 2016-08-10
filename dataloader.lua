@@ -50,7 +50,7 @@ function DataLoader:__init(imageInfo, opt, split)
    self.threads = threads
    self.__size = sizes[1][1]
    self.batchSize = math.floor(opt.batchSize / self.nCrops)
-   self.nIters = math.ceil(self.batchSize / self.__size)
+   self.nIters = math.ceil(self.__size / self.batchSize)
    self.split = split
 
    -- organize training samples by classes
@@ -116,7 +116,7 @@ function DataLoader:run()
                   self.classInds[class] = torch.randperm(self.classInds[class]:size(1))
                   self.classIndPointer[class] = 1
                end
-               table.insert(indicesCatTable, self.classKeyInds[self.classInds[class][self.classIndPointer[class]]])
+               table.insert(indicesCatTable, self.classKeyInds[class][self.classInds[class][self.classIndPointer[class]]])
                self.classIndPointer[class] = self.classIndPointer[class] + 1
             end
             indices = torch.Tensor(indicesCatTable)
