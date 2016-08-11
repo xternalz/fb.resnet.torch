@@ -36,7 +36,7 @@ local function findImages(dataInfo)
          local line = f:read('*line')
          if not line then break end
 
-         local spaceInd1, spaceInd2 = string.find(line, " ")
+         local spaceInd1 = string.find(line, " ")
          local bpath = line:sub(1,spaceInd-1)
          if bpath:sub(1,1) == '/' then
             bpath = bpath:sub(2,bpath:len())
