@@ -28,7 +28,7 @@ local function findImages(dataInfo)
    local imageClasses = tds.Vec()
 
    for d = 1, #dataInfo do
-      f = io.open(paths.concat("./datasets/", dataInfo[d][2]), 'r')
+      f = io.open(paths.concat("./datasets", dataInfo[d][2]), 'r')
       local dir = dataInfo[d][1]
 
       -- Generate a list of all the images and their class

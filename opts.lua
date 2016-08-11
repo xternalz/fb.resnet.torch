@@ -64,7 +64,7 @@ function M.parse(arg)
       cmd:error('error: unable to create checkpoint directory: ' .. opt.save .. '\n')
    end
 
-   if string.match(opt.dataset, 'imagenet') then
+   --[[if string.match(opt.dataset, 'imagenet') then
       -- Handle the most common case of missing -data flag
       local trainDir = paths.concat(opt.data, 'train')
       if not paths.dirp(opt.data) then
@@ -81,7 +81,7 @@ function M.parse(arg)
       opt.nEpochs = opt.nEpochs == 0 and 164 or opt.nEpochs
    else
       cmd:error('unknown dataset: ' .. opt.dataset)
-   end
+   end--]]
 
    if opt.resetClassifier then
       if opt.nClasses == 0 then

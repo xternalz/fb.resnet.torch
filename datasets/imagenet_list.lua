@@ -39,7 +39,6 @@ function ImagenetDataset:get(i)
 end
 
 function ImagenetDataset:_loadImage(path)
-torch.setnumthreads(1)
    local ok, input = pcall(function()
       return image.load(path, 3, 'float')
    end)
@@ -62,7 +61,7 @@ torch.setnumthreads(1)
 end
 
 function ImagenetDataset:size()
-   return #self.imageInfo.imageClass
+   return #(self.imageInfo.imageClass)
 end
 
 -- Computed from random subset of ImageNet training images

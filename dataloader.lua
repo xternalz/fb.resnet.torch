@@ -55,14 +55,12 @@ function DataLoader:__init(imageInfo, opt, split)
 
    -- organize training samples by classes
    if split == 'train' then
-      local keys = imageInfo[split].Keys
+      local labels = imageInfo[split].imageClass
       self.classKeyInds = {}
       self.classInds = {}
       self.classIndPointer = {}
-      for i = 1, #keys do
-         local key = keys[i]
-         local _,labelInd = string.find(key, '~.~')
-         local label = tonumber(key:sub(labelInd+1,key:len())) + 1
+      for i = 1, #labels do
+         local label = labels[i]
          if self.classKeyInds[label] == nil then
             self.classKeyInds[label] = {i}
          else
