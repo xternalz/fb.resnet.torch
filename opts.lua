@@ -64,14 +64,14 @@ function M.parse(arg)
       cmd:error('error: unable to create checkpoint directory: ' .. opt.save .. '\n')
    end
 
-   --[[if string.match(opt.dataset, 'imagenet') then
+   if string.match(opt.dataset, 'imagenet') then
       -- Handle the most common case of missing -data flag
-      local trainDir = paths.concat(opt.data, 'train')
+      --[[local trainDir = paths.concat(opt.data, 'train')
       if not paths.dirp(opt.data) then
          cmd:error('error: missing ImageNet data directory')
       elseif not paths.dirp(trainDir) then
          cmd:error('error: ImageNet missing `train` directory: ' .. trainDir)
-      end
+      end--]]
       -- Default shortcutType=B and nEpochs=90
       opt.shortcutType = opt.shortcutType == '' and 'B' or opt.shortcutType
       opt.nEpochs = opt.nEpochs == 0 and 90 or opt.nEpochs
@@ -81,7 +81,7 @@ function M.parse(arg)
       opt.nEpochs = opt.nEpochs == 0 and 164 or opt.nEpochs
    else
       cmd:error('unknown dataset: ' .. opt.dataset)
-   end--]]
+   end
 
    if opt.resetClassifier then
       if opt.nClasses == 0 then
