@@ -20,10 +20,7 @@ local function isvalid(opt, cachePath)
 end
 
 function M.getImageInfo(opt, split)
-   local tds = nil
-   if string.match(opt.dataset, 'lmdb') then
-      tds = require 'tds'
-   end
+   local tds = require 'tds'
    local cachePath = paths.concat(opt.gen, opt.dataset .. '.t7')
    if not paths.filep(cachePath) or not isvalid(opt, cachePath) then
       paths.mkdir('gen')
