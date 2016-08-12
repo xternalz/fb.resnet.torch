@@ -97,11 +97,13 @@ function Trainer:test(epoch, dataloader)
 
    self.model:evaluate()
    -- Stochastic forward dropout during testing
-   self.model:apply(function(m)
-      if torch.type(m) == 'nn.Dropout' then
-         m.train = true
-      end
-   end)
+   if self.opt.nStocSamples > 1 then
+      self.model:apply(function(m)
+         if torch.type(m) == 'nn.Dropout' then
+            m.train = true
+         end
+      end)
+   end
    for n, sample in dataloader:run() do
       local dataTime = dataTimer:time().real
 
