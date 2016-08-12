@@ -95,7 +95,7 @@ function DataLoader:run()
    local size, batchSize = self.__size, self.batchSize
    local perm = torch.randperm(size)
 
-   local idi, idx, sample = 1, 1, nil
+   local idi, idx, sample = 0, 1, nil
    local function enqueue()
       while ((idx <= size and self.split == 'val') or (idi < self.nIters and self.split == 'train')) and threads:acceptsjob() do
          local indices
