@@ -112,13 +112,15 @@ function Trainer:test(epoch, dataloader)
 
       -- Stochastic inference
       local output = nil
+      local softmax = cudnn.SoftMax():cuda()
       for i = 1, self.opt.nStocSamples do
          if output == nil then
-            output = self.model:forward(self.input):div(self.opt.nStocSamples)
+            output = softmax:forward(self.model:forward(self.input)):clone()
          else
-            output:add(self.model:forward(self.input):div(self.opt.nStocSamples))
+            output:add(softmax:forward(self.model:forward(self.input)))
          end
       end
+      output:div(self.opt.nStocSamples)
       local batchSize = output:size(1) / nCrops
       local loss = self.criterion:forward(output, self.target)
 
