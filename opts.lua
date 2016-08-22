@@ -24,13 +24,13 @@ function M.parse(arg)
    cmd:option('-cudnn',      'fastest',  'Options: fastest | default | deterministic')
    cmd:option('-gen',        'gen',      'Path to save generated files')
    ------------- Data options ------------------------
-   cmd:option('-nThreads',        2, 'number of data loading threads')
+   cmd:option('-nThreads',        16, 'number of data loading threads')
    ------------- Training options --------------------
    cmd:option('-nEpochs',         0,       'Number of total epochs to run')
    cmd:option('-epochNumber',     1,       'Manual epoch number (useful on restarts)')
    cmd:option('-batchSize',       256,      'mini-batch size (1 = pure stochastic)')
    cmd:option('-testOnly',        'true', 'Run on validation set only')
-   cmd:option('-nStocSamples',    50,      'Number of stochastic test samples')
+   cmd:option('-nStocSamples',    1,      'Number of stochastic test samples')
    cmd:option('-tenCrop',         'true', 'Ten-crop testing')
    ------------- Checkpointing options ---------------
    cmd:option('-save',            'checkpoints', 'Directory in which to save checkpoints')
