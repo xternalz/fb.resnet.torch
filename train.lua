@@ -158,7 +158,6 @@ function Trainer:extract(epoch, dataloader)
 
    local nCrops = self.opt.tenCrop and 10 or 1
    local top1Sum, top5Sum = 0.0, 0.0
-   local N = 0
 
    self.model:evaluate()
    -- Stochastic forward dropout during extraction
@@ -196,8 +195,6 @@ function Trainer:extract(epoch, dataloader)
 
       -- Save batch
       torch.save(paths.concat(self.opt.extractDir, n .. '.t7'), torch.CompressedTensor(output:float()))
-
-      N = N + batchSize
 
       print((' | Extraction: [%d][%d/%d]    Time %.3f  Data %.3f'):format(
          epoch, n, size, timer:time().real, dataTime))
