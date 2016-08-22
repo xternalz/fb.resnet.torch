@@ -28,7 +28,7 @@ local function findImages(dataInfo)
    local imageClasses = tds.Vec()
 
    for d = 1, #dataInfo do
-      f = io.open(paths.concat("./datasets", dataInfo[d][2]), 'r')
+      local f = io.open(paths.concat("./datasets", dataInfo[d][2]), 'r')
       local dir = dataInfo[d][1]
 
       -- Generate a list of all the images and their class
@@ -77,11 +77,11 @@ function M.exec(opt, cacheFile)
    assert(paths.dirp(valDir), 'val directory not found: ' .. valDir)
 
    print(" | finding all validation images")
-   local valImagePath, valImageClass = findImages({{trainDir, "extra_val.txt"},
-                                                   {valDir, "places365_val.txt"}})
+   local valImagePath, valImageClass = findImages({--{trainDir, "extra_val.txt"},
+                                                   {trainDir, "places365_train_challenge_caffe_shuffle.txt"}})
 
    print(" | finding all training images")
-   local trainImagePath, trainImageClass = findImages({{trainDir, "places365_train_challenge_minus_extraval.txt"}})
+   local trainImagePath, trainImageClass = findImages({{valDir, "places365_val.txt"}})
 
    local info = {
       basedir = opt.data,

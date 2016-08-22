@@ -195,7 +195,7 @@ function Trainer:extract(epoch, dataloader)
       end
 
       -- Save batch
-      torch.save(paths.concat(opt.save, n .. '.t7'), torch.CompressedTensor(output:float()))
+      torch.save(paths.concat(self.opt.extractDir, n .. '.t7'), torch.CompressedTensor(output:float()))
 
       N = N + batchSize
 

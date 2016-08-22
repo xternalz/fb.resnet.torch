@@ -45,7 +45,7 @@ function M.setup(opt, checkpoint)
       local optnet = require 'optnet'
       local imsize = string.match(opt.dataset, 'imagenet') ~= nil and 224 or 32
       local sampleInput = torch.zeros(4,3,imsize,imsize):cuda()
-      optnet.optimizeMemory(model, sampleInput, {inplace = false, mode = 'inference', removeGradParams = 'true'})
+      optnet.optimizeMemory(model, sampleInput, {inplace = false, mode = 'inference', removeGradParams = true})
    end
 
    -- This is useful for fitting ResNet-50 on 4 GPUs, but requires that all
@@ -85,7 +85,7 @@ function M.setup(opt, checkpoint)
       local gpus = torch.range(1, opt.nGPU):totable()
       local fastest, benchmark = cudnn.fastest, cudnn.benchmark
 
-      local dpt = nn.DataParallelTable(1, true, true)
+      local dpt = nn.DataParallelTable(1, false, false)
          :add(model, gpus)
          :threads(function()
             local cudnn = require 'cudnn'
