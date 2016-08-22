@@ -187,8 +187,7 @@ function Trainer:extract(epoch, dataloader)
 
       -- Average over crops
       if nCrops > 1 then
-         output = output:view(output:size(1) / nCrops, nCrops, output:size(2))
-         output:sum(2):squeeze(2):div(nCrops)
+         output = output:view(output:size(1) / nCrops, nCrops, output:size(2)):sum(2):div(nCrops):squeeze(2)
       end
 
       -- Save batch
