@@ -187,17 +187,15 @@ function Trainer:extract(epoch, dataloader)
 
       -- Average over crops
       if nCrops > 1 then
-         output:view(output:size(1) / nCrops, nCrops, output:size(2))
-            --:exp()
-            :sum(2):squeeze(2)
-         output:div(nCrops)
+         output = output:view(output:size(1) / nCrops, nCrops, output:size(2))
+         output:sum(2):squeeze(2):div(nCrops)
       end
 
       -- Save batch
       torch.save(paths.concat(self.opt.extractDir, n .. '.t7'), torch.CompressedTensor(output:float()))
 
       print((' | Extraction: [%d][%d/%d]    Time %.3f  Data %.3f'):format(
-         epoch, n, size / nCrops, timer:time().real, dataTime))
+         epoch, n, size, timer:time().real, dataTime))
 
       timer:reset()
       dataTimer:reset()
