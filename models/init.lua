@@ -32,6 +32,9 @@ function M.setup(opt, checkpoint)
       model = require('models/' .. opt.netType)(opt)
    end
 
+   -- Remove classification (FC) layer
+   model:remove(model:size())
+
    -- First remove any DataParallelTable
    if torch.type(model) == 'nn.DataParallelTable' then
       model = model:get(1)
@@ -42,7 +45,7 @@ function M.setup(opt, checkpoint)
       local optnet = require 'optnet'
       local imsize = string.match(opt.dataset, 'imagenet') ~= nil and 224 or 32
       local sampleInput = torch.zeros(4,3,imsize,imsize):cuda()
-      optnet.optimizeMemory(model, sampleInput, {inplace = false, mode = 'training'})
+      optnet.optimizeMemory(model, sampleInput, {inplace = false, mode = 'inference', removeGradParams = 'true'})
    end
 
    -- This is useful for fitting ResNet-50 on 4 GPUs, but requires that all

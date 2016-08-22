@@ -143,6 +143,70 @@ function Trainer:test(epoch, dataloader)
    return top1Sum / N, top5Sum / N
 end
 
+function Trainer:extract(epoch, dataloader)
+   -- Feature Extraction
+
+   require 'torchzlib'
+
+   if not paths.dirp(self.opt.extractDir) and not paths.mkdir(self.opt.extractDir) then
+      cmd:error('error: unable to create checkpoint directory: ' .. opt.save .. '\n')
+   end
+
+   local timer = torch.Timer()
+   local dataTimer = torch.Timer()
+   local size = dataloader:size()
+
+   local nCrops = self.opt.tenCrop and 10 or 1
+   local top1Sum, top5Sum = 0.0, 0.0
+   local N = 0
+
+   self.model:evaluate()
+   -- Stochastic forward dropout during extraction
+   if self.opt.nStocSamples > 1 then
+      self.model:apply(function(m)
+         if torch.type(m) == 'nn.Dropout' then
+            m.train = true
+         end
+      end)
+   end
+   for n, sample in dataloader:run() do
+      local dataTime = dataTimer:time().real
+
+      -- Copy input and target to the GPU
+      self:copyInputs(sample)
+
+      -- Stochastic inference
+      local output = nil
+      for i = 1, self.opt.nStocSamples do
+         if output == nil then
+            output = self.model:forward(self.input):clone()
+         else
+            output:add(self.model:forward(self.input))
+         end
+      end
+      output:div(self.opt.nStocSamples)
+
+      -- Average over crops
+      if nCrops > 1 then
+         output:view(output:size(1) / nCrops, nCrops, output:size(2))
+            --:exp()
+            :sum(2):squeeze(2)
+         output:div(nCrops)
+      end
+
+      -- Save batch
+      torch.save(paths.concat(opt.save, n .. '.t7'), torch.CompressedTensor(output:float()))
+
+      N = N + batchSize
+
+      print((' | Extraction: [%d][%d/%d]    Time %.3f  Data %.3f'):format(
+         epoch, n, size, timer:time().real, dataTime))
+
+      timer:reset()
+      dataTimer:reset()
+   end
+end
+
 function Trainer:computeScore(output, target, nCrops)
    if nCrops > 1 then
       -- Sum over crops
