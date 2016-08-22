@@ -96,6 +96,7 @@ function Trainer:test(epoch, dataloader)
    local N = 0
 
    self.model:evaluate()
+   local softmax = cudnn.SoftMax():cuda()
    -- Stochastic forward dropout during testing
    if self.opt.nStocSamples > 1 then
       self.model:apply(function(m)
@@ -112,7 +113,6 @@ function Trainer:test(epoch, dataloader)
 
       -- Stochastic inference
       local output = nil
-      local softmax = cudnn.SoftMax():cuda()
       for i = 1, self.opt.nStocSamples do
          if output == nil then
             output = softmax:forward(self.model:forward(self.input)):clone()
