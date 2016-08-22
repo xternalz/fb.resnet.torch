@@ -197,7 +197,7 @@ function Trainer:extract(epoch, dataloader)
       torch.save(paths.concat(self.opt.extractDir, n .. '.t7'), torch.CompressedTensor(output:float()))
 
       print((' | Extraction: [%d][%d/%d]    Time %.3f  Data %.3f'):format(
-         epoch, n / nCrops, size, timer:time().real, dataTime))
+         epoch, n, size / nCrops, timer:time().real, dataTime))
 
       timer:reset()
       dataTimer:reset()
