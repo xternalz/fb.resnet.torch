@@ -26,7 +26,7 @@ function Trainer:__init(model, criterion, opt, optimState)
       weightDecay = opt.weightDecay,
    }
    self.opt = opt
-   self.params, self.gradParams = model:getParameters()
+   --self.params, self.gradParams = model:getParameters()
 end
 
 function Trainer:train(epoch, dataloader)
