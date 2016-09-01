@@ -94,6 +94,7 @@ function Trainer:test(epoch, dataloader)
    local nCrops = self.opt.tenCrop and 10 or 1
    local top1Sum, top5Sum = 0.0, 0.0
    local N = 0
+   local top5ClassAccs = torch.zeros(365,2)
 
    self.model:evaluate()
    local softmax = cudnn.SoftMax():cuda()
@@ -124,7 +125,7 @@ function Trainer:test(epoch, dataloader)
       local batchSize = output:size(1) / nCrops
       local loss = self.criterion:forward(output, self.target)
 
-      local top1, top5 = self:computeScore(output:float(), sample.target, nCrops)
+      local top1, top5 = self:computeScore(output:float(), sample.target, nCrops, top5ClassAccs)
       top1Sum = top1Sum + top1*batchSize
       top5Sum = top5Sum + top5*batchSize
       N = N + batchSize
@@ -137,13 +138,13 @@ function Trainer:test(epoch, dataloader)
    end
    self.model:training()
 
-   print((' * Finished epoch # %d     top1: %7.3f  top5: %7.3f\n'):format(
-      epoch, top1Sum / N, top5Sum / N))
+   print((' * Finished epoch # %d     top1: %7.3f  top5: %7.3f  class-top5-acc: %7.3f\n'):format(
+      epoch, top1Sum / N, top5Sum / N, torch.cdiv(top5ClassAccs:select(2,1), top5ClassAccs:select(2,2)):sum() / 365 * 100))
 
    return top1Sum / N, top5Sum / N
 end
 
-function Trainer:computeScore(output, target, nCrops)
+function Trainer:computeScore(output, target, nCrops, top5ClassAccs)
    if nCrops > 1 then
       -- Sum over crops
       output = output:view(output:size(1) / nCrops, nCrops, output:size(2))
@@ -166,6 +167,16 @@ function Trainer:computeScore(output, target, nCrops)
    -- Top-5 score, if there are at least 5 classes
    local len = math.min(5, correct:size(2))
    local top5 = 1.0 - (correct:narrow(2, 1, len):sum() / batchSize)
+
+   -- Per-class Top-5
+   local correct_ = correct:narrow(2, 1, len):sum(2):squeeze()
+   local target_ = target:long()
+   for i = 1, batchSize do
+      top5ClassAccs[target_[i]][2] = top5ClassAccs[target_[i]][2] + 1
+      if correct_[i] > 0 then
+         top5ClassAccs[target_[i]][1] = top5ClassAccs[target_[i]][1] + 1
+      end
+   end
 
    return top1 * 100, top5 * 100
 end
