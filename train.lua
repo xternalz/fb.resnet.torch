@@ -161,7 +161,7 @@ function Trainer:test(epoch, dataloader, scale)
       resultCount = resultCount + batchCount
 
       if resultCount >= self.opt.saveInterval*dataloaderBatchSize or n == size then
-         torch.save('results/' scale .. '/' .. saveInd .. '.t7', results)
+         torch.save('results/' .. scale .. '/' .. saveInd .. '.t7', results)
          resultCount = 1
       end
 

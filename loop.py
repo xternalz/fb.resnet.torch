@@ -1,7 +1,7 @@
 import subprocess
 
 f = open('run_log.txt','a+')
-while true:
+while True:
     try:
         output = subprocess.check_output(['th', 'main.lua'])
         f.write('\n')
