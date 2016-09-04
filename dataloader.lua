@@ -47,9 +47,9 @@ function DataLoader:__init(imageInfo, opt, split)
 
    local threads, sizes = nil, nil
    if split == 'train' then
-      Threads(1, init, main)
+      threads, sizes = Threads(1, init, main)
    else
-      Threads(opt.nThreads, init, main)
+      threads, sizes = Threads(opt.nThreads, init, main)
    end
    self.nCrops = 6
    self.threads = threads
