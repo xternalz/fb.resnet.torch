@@ -46,7 +46,7 @@ function DataLoader:__init(imageInfo, opt, split)
    end
 
    local threads, sizes = Threads(opt.nThreads, init, main)
-   self.nCrops = (split == 'val' and opt.tenCrop) and 10 or 1
+   self.nCrops = 10
    self.threads = threads
    self.__size = sizes[1][1]
    self.scales = (split == 'val' and opt.testScales) or {320}
