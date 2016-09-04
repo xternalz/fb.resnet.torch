@@ -113,14 +113,6 @@ function Trainer:test(epoch, dataloader)
 
    self.model:evaluate()
    local softmax = cudnn.SoftMax():cuda()
-   -- Stochastic forward dropout during testing
-   if self.opt.nStocSamples > 1 then
-      self.model:apply(function(m)
-         if torch.type(m) == 'nn.Dropout' then
-            m.train = true
-         end
-      end)
-   end
    for n, sample in dataloader:run(indices:nonzero()) do
       local dataTime = dataTimer:time().real
 
@@ -168,7 +160,6 @@ function Trainer:test(epoch, dataloader)
       timer:reset()
       dataTimer:reset()
    end
-   self.model:training()
 
    return 0, 0
 end

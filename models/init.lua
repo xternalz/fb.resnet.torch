@@ -77,8 +77,8 @@ function M.setup(opt, checkpoint)
    model.evaluate = function() end
    model.parameters =
    function()
-      local a = torch.Tensor(1)
-      local b = torch.Tensor(1)
+      local a = torch.CudaTensor(1)
+      local b = torch.CudaTensor(1)
       return {a},{b}
    end
 
