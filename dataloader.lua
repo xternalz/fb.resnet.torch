@@ -45,7 +45,12 @@ function DataLoader:__init(imageInfo, opt, split)
       return _G.dataset:size()
    end
 
-   local threads, sizes = Threads(opt.nThreads, init, main)
+   local threads, sizes = nil, nil
+   if split == 'train' then
+      Threads(1, init, main)
+   else
+      Threads(opt.nThreads, init, main)
+   end
    self.nCrops = 6
    self.threads = threads
    self.__size = sizes[1][1]
