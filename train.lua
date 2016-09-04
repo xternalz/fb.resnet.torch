@@ -106,7 +106,7 @@ function Trainer:test(epoch, dataloader)
          saveInd = saveInd + 1
       end
    end
-   indices = indices:nonzero()
+   indices = indices:nonzero():squeeze()
    collectgarbage()
 
    local resultCount = 0
