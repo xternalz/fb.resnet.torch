@@ -96,6 +96,7 @@ function DataLoader:run(indices_to_process)
    local threads = self.threads
    local size, batchSize = self.__size, self.batchSize
    local perm = indices_to_process
+   size = indices_to_process:size(1)
 
    local idi, idx, sample = 0, 1, nil
    local function enqueue()
