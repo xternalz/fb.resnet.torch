@@ -100,7 +100,7 @@ function Trainer:test(epoch, dataloader)
       if string.match(filename, '.t7') then
          local res = torch.load('results/' .. filename)
          res = res[3]
-         for j = 1, res:size(1) then
+         for j = 1, res:size(1) do
             indices[res[j]] = 1
          end
       end
