@@ -124,13 +124,13 @@ function DataLoader:run(indices)
          end
          for s = 1, #self.scales do
             threads:addjob(
-               function(indices, nCrops)
+               function(indices, nCrops, scale)
                   local sz = indices:size(1)
                   local batch, imageSize
                   local target = torch.IntTensor(sz)
                   for i, idx in ipairs(indices:totable()) do
                      local sample = _G.dataset:get(idx)
-                     local input = _G.preprocess(sample.input, self.scales[s])
+                     local input = _G.preprocess(sample.input, scale)
                      if not batch then
                         imageSize = input:size():totable()
                         if nCrops > 1 then table.remove(imageSize, 1) end
@@ -150,7 +150,8 @@ function DataLoader:run(indices)
                   sample = _sample_
                end,
                indices,
-               self.nCrops
+               self.nCrops,
+               self.scales[s]
             )
             idx = idx + batchSize
             idi = idi + 1
