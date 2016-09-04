@@ -103,9 +103,10 @@ function Trainer:test(epoch, dataloader)
          for j = 1, res:size(1) do
             indices[res[j]] = 0
          end
+         saveInd = saveInd + 1
       end
-      saveInd = saveInd + 1
    end
+   indices = indices:nonzero()
    collectgarbage()
 
    local resultCount = 0
@@ -113,7 +114,7 @@ function Trainer:test(epoch, dataloader)
 
    self.model:evaluate()
    local softmax = cudnn.SoftMax():cuda()
-   for n, sample in dataloader:run(indices:nonzero()) do
+   for n, sample in dataloader:run(indices) do
       local dataTime = dataTimer:time().real
 
       -- Copy input and target to the GPU
