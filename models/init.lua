@@ -39,7 +39,7 @@ function M.setup(opt, checkpoint)
    local poolInd = model_classify:size()-2
    model_classify:remove(poolInd)
    model_classify:insert(nn.Squeeze(2,2), poolInd)
-   model_classify:insert(nn.Mean(2,3), poolInd)
+   model_classify:insert(nn.Mean(3), poolInd)
    model_classify:insert(nn.Squeeze(3,3), poolInd)
    model_classify:insert(nn.View(model_classify:get(model_classify:size()).weight:size(2),-1,1):setNumInputDims(3), poolInd)
    model_classify:remove(model_classify:size()-1)
