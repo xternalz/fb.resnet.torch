@@ -73,12 +73,14 @@ function M.exec(opt, cacheFile)
 
    local trainDir = paths.concat(opt.data, 'data_large')
    local valDir = paths.concat(opt.data, 'val_large')
+   local testDir = paths.concat(opt.data, 'test_large')
    assert(paths.dirp(trainDir), 'train directory not found: ' .. trainDir)
    assert(paths.dirp(valDir), 'val directory not found: ' .. valDir)
+   assert(paths.dirp(testDir), 'test directory not found: ' .. testDir)
 
    print(" | finding all validation images")
    local valImagePath, valImageClass = findImages({{trainDir, "extra_val.txt"},
-                                                   {valDir, "places365_val.txt"}})
+                                                   {valDir, "places365_val.txt"}, {testDir, 'places365_test.txt'}})
 
    print(" | finding all training images")
    local trainImagePath, trainImageClass = findImages({{trainDir, "places365_train_challenge_minus_extraval.txt"}})

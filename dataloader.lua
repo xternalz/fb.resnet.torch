@@ -49,10 +49,11 @@ function DataLoader:__init(imageInfo, opt, split)
    self.nCrops = (split == 'val' and opt.tenCrop) and 10 or 1
    self.threads = threads
    self.__size = sizes[1][1]
+   self.scales = (split == 'val' and opt.testScales) or {320}
+   self.__size = self.__size * #self.scales
    self.batchSize = math.floor(opt.batchSize / self.nCrops)
    self.nIters = math.ceil(self.__size / self.batchSize)
    self.split = split
-   self.scales = (split == 'val' and opt.testScales) or {320}
 
    -- organize training samples by classes
    if split == 'train' then
@@ -129,7 +130,7 @@ function DataLoader:run(indices)
                   local target = torch.IntTensor(sz)
                   for i, idx in ipairs(indices:totable()) do
                      local sample = _G.dataset:get(idx)
-                     local input = _G.preprocess(sample.input, s)
+                     local input = _G.preprocess(sample.input, self.scales[s])
                      if not batch then
                         imageSize = input:size():totable()
                         if nCrops > 1 then table.remove(imageSize, 1) end
@@ -151,9 +152,9 @@ function DataLoader:run(indices)
                indices,
                self.nCrops
             )
+            idx = idx + batchSize
+            idi = idi + 1
          end
-         idx = idx + batchSize
-         idi = idi + 1
       end
    end
 
