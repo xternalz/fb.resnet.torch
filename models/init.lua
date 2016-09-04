@@ -32,6 +32,56 @@ function M.setup(opt, checkpoint)
       model = require('models/' .. opt.netType)(opt)
    end
 
+   local model_classify = model
+   if model:size() == 2 then
+      model_classify:get(2)
+   end
+   local poolInd = model_classify:size()-2
+   model_classify:remove(poolInd)
+   model_classify:insert(nn.Squeeze(2,2), poolInd)
+   model_classify:insert(nn.Mean(2,3), poolInd)
+   model_classify:insert(nn.Squeeze(3,3), poolInd)
+   model_classify:insert(nn.View(model_classify:get(model_classify:size()).weight:size(2),-1,1):setNumInputDims(3), poolInd)
+   model_classify:remove(model_classify:size()-1)
+
+   model:apply(function(m)
+      if torch.type(m) == 'nn.Dropout' then
+         m.train = true
+      end
+   end)
+   model:cuda()
+   local optnet = require 'optnet'
+   local sampleInput = torch.zeros(4,3,320,320):cuda()
+   model:evaluate()
+   if frontModelDet == false then
+      optnet.optimizeMemory(model, sampleInput, {inplace = true, mode = 'inference', reuseBuffers = true, removeGradParams = true})
+   else
+      optnet.optimizeMemory(model:get(1), sampleInput, {inplace = true, mode = 'inference', reuseBuffers = true, removeGradParams = true})
+      local sampleInput2 = model:get(1).output
+      optnet.optimizeMemory(model:get(2), sampleInput2, {inplace = true, mode = 'inference', reuseBuffers = true, removeGradParams = true})
+   end
+   model:apply(function(m)
+      if torch.type(m) == 'nn.Dropout' then
+         m.train = true
+      end
+   end)
+   model:evaluate()
+
+   -- Add front resnet to model
+   model.backward = function() end
+   model.updateGradInput = function() end
+   model.accGradParameters = function() end
+   model.accUpdateGradParameters = function() end
+   model.accUpdateGradParameters = function() end
+   model.training = function() end
+   model.evaluate = function() end
+   model.parameters = 
+   function()
+      local a = torch.Tensor(1)
+      local b = torch.Tensor(1)
+      return {a},{b}
+   end
+
    -- First remove any DataParallelTable
    if torch.type(model) == 'nn.DataParallelTable' then
       model = model:get(1)

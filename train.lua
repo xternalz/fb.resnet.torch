@@ -91,10 +91,25 @@ function Trainer:test(epoch, dataloader)
    local dataTimer = torch.Timer()
    local size = dataloader:size()
 
-   local nCrops = self.opt.tenCrop and 10 or 1
-   local top1Sum, top5Sum = 0.0, 0.0
-   local N = 0
-   local top5ClassAccs = torch.zeros(365,2)
+   local nCrops = 10
+
+   --Find out if there's any existing results saved
+   local saveInd = 1
+   local indices = torch.zeros(dataloader.__size)
+   for filename in paths.iterfiles('results') do
+      if string.match(filename, '.t7') then
+         local res = torch.load('results/' .. filename)
+         res = res[3]
+         for j = 1, res:size(1) then
+            indices[res[j]] = 1
+         end
+      end
+      saveInd = saveInd + 1
+   end
+   collectgarbage()
+
+   local resultCount = 0
+   local results = {torch.Tensor(self.opt.saveInterval,365), torch.Tensor(self.opt.saveInterval,365), torch.Tensor(self.opt.saveInterval)}
 
    self.model:evaluate()
    local softmax = cudnn.SoftMax():cuda()
@@ -106,42 +121,56 @@ function Trainer:test(epoch, dataloader)
          end
       end)
    end
-   for n, sample in dataloader:run() do
+   for n, sample in dataloader:run(indices:nonzero()) do
       local dataTime = dataTimer:time().real
 
       -- Copy input and target to the GPU
       self:copyInputs(sample)
 
       -- Stochastic inference
-      local output = nil
+      local raw_output = nil
+      local prob_output = nil
       for i = 1, self.opt.nStocSamples do
-         if output == nil then
-            output = softmax:forward(self.model:forward(self.input)):clone()
+         local output = nil
+         if i == 1 or self.opt.frontModelDet == false then
+            output = self.model:forward(self.input)
          else
-            output:add(softmax:forward(self.model:forward(self.input)))
+            output = self.model:get(2):forward(self.model:get(1).output)
+         end
+         if raw_output == nil then
+            raw_output = output:float():clone()
+         else
+            raw_output:add(output:float())
+         end
+         if prob_output == nil then
+            prob_output = softmax:forward(output):float():clone()
+         else
+            prob_output:add(softmax:forward(output):float())
          end
       end
-      output:div(self.opt.nStocSamples)
-      local batchSize = output:size(1) / nCrops
-      local loss = self.criterion:forward(output, self.target)
+      raw_output:div(self.opt.nStocSamples)
+      prob_output:div(self.opt.nStocSamples)
 
-      local top1, top5 = self:computeScore(output:float(), sample.target, nCrops, top5ClassAccs)
-      top1Sum = top1Sum + top1*batchSize
-      top5Sum = top5Sum + top5*batchSize
-      N = N + batchSize
+      resultCount = resultCount + 1
+      results[1]:select(1,resultCount):copy(raw_output:mean(1))
+      results[2]:select(1,resultCount):copy(prob_output:mean(1))
+      assert(self.index ~= -1, 'self.index cannot be -1')
+      results[2][resultCount] = self.index
 
-      print((' | Test: [%d][%d/%d]    Time %.3f  Data %.3f  top1 %7.3f (%7.3f)  top5 %7.3f (%7.3f)'):format(
-         epoch, n, size, timer:time().real, dataTime, top1, top1Sum / N, top5, top5Sum / N))
+      if resultCount == self.opt.saveInterval then
+         torch.save('results/' .. saveInd .. '.t7', results)
+         resultCount = 0
+      end
+
+      print((' | Test: [%d][%d/%d]    Time %.3f  Data %.3f'):format(
+         epoch, n, size, timer:time().real, dataTime))
 
       timer:reset()
       dataTimer:reset()
    end
    self.model:training()
 
-   print((' * Finished epoch # %d     top1: %7.3f  top5: %7.3f  class-top5-acc: %7.3f\n'):format(
-      epoch, top1Sum / N, top5Sum / N, torch.cdiv(top5ClassAccs:select(2,1), top5ClassAccs:select(2,2)):sum() / 365 * 100))
-
-   return top1Sum / N, top5Sum / N
+   return 0, 0
 end
 
 function Trainer:computeScore(output, target, nCrops, top5ClassAccs)
@@ -188,9 +217,11 @@ function Trainer:copyInputs(sample)
       and torch.CudaTensor()
       or cutorch.createCudaHostTensor())
    self.target = self.target or torch.CudaTensor()
+   self.index = self.index or -1
 
    self.input:resize(sample.input:size()):copy(sample.input)
    self.target:resize(sample.target:size()):copy(sample.target)
+   self.index = sample.index
 end
 
 function Trainer:learningRate(epoch)

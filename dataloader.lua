@@ -52,6 +52,7 @@ function DataLoader:__init(imageInfo, opt, split)
    self.batchSize = math.floor(opt.batchSize / self.nCrops)
    self.nIters = math.ceil(self.__size / self.batchSize)
    self.split = split
+   self.scales = (split == 'val' and opt.testScales) or {320}
 
    -- organize training samples by classes
    if split == 'train' then
@@ -90,10 +91,10 @@ function DataLoader:size()
    return math.ceil(self.__size / self.batchSize)
 end
 
-function DataLoader:run()
+function DataLoader:run(indices)
    local threads = self.threads
    local size, batchSize = self.__size, self.batchSize
-   local perm = torch.randperm(size)
+   local perm = indices
 
    local idi, idx, sample = 0, 1, nil
    local function enqueue()
@@ -120,34 +121,37 @@ function DataLoader:run()
             indices = torch.Tensor(indicesCatTable)
             collectgarbage()
          end
-         threads:addjob(
-            function(indices, nCrops)
-               local sz = indices:size(1)
-               local batch, imageSize
-               local target = torch.IntTensor(sz)
-               for i, idx in ipairs(indices:totable()) do
-                  local sample = _G.dataset:get(idx)
-                  local input = _G.preprocess(sample.input)
-                  if not batch then
-                     imageSize = input:size():totable()
-                     if nCrops > 1 then table.remove(imageSize, 1) end
-                     batch = torch.FloatTensor(sz, nCrops, table.unpack(imageSize))
+         for s = 1, #self.scales do
+            threads:addjob(
+               function(indices, nCrops)
+                  local sz = indices:size(1)
+                  local batch, imageSize
+                  local target = torch.IntTensor(sz)
+                  for i, idx in ipairs(indices:totable()) do
+                     local sample = _G.dataset:get(idx)
+                     local input = _G.preprocess(sample.input, s)
+                     if not batch then
+                        imageSize = input:size():totable()
+                        if nCrops > 1 then table.remove(imageSize, 1) end
+                        batch = torch.FloatTensor(sz, nCrops, table.unpack(imageSize))
+                     end
+                     batch[i]:copy(input)
+                     target[i] = sample.target
                   end
-                  batch[i]:copy(input)
-                  target[i] = sample.target
-               end
-               collectgarbage()
-               return {
-                  input = batch:view(sz * nCrops, table.unpack(imageSize)),
-                  target = target,
-               }
-            end,
-            function(_sample_)
-               sample = _sample_
-            end,
-            indices,
-            self.nCrops
-         )
+                  collectgarbage()
+                  return {
+                     input = batch:view(sz * nCrops, table.unpack(imageSize)),
+                     target = target,
+                     index = indices[1]
+                  }
+               end,
+               function(_sample_)
+                  sample = _sample_
+               end,
+               indices,
+               self.nCrops
+            )
+         end
          idx = idx + batchSize
          idi = idi + 1
       end
