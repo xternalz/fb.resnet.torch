@@ -92,10 +92,10 @@ function DataLoader:size()
    return math.ceil(self.__size / self.batchSize)
 end
 
-function DataLoader:run(indices)
+function DataLoader:run(indices_to_process)
    local threads = self.threads
    local size, batchSize = self.__size, self.batchSize
-   local perm = indices
+   local perm = indices_to_process
 
    local idi, idx, sample = 0, 1, nil
    local function enqueue()
