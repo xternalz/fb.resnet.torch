@@ -76,7 +76,7 @@ function M.setup(opt, checkpoint)
    model.training = function() end
    model.evaluate = function() end
    local a = torch.CudaTensor(1)
-   model.parameters = function() return {a} {a} end
+   model.parameters = function() return {a}, {a} end
 
    -- First remove any DataParallelTable
    if torch.type(model) == 'nn.DataParallelTable' then

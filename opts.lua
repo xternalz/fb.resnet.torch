@@ -32,7 +32,7 @@ function M.parse(arg)
    cmd:option('-testOnly',        'true', 'Run on validation set only')
    cmd:option('-nStocSamples',    20,      'Number of stochastic test samples')
    cmd:option('-tenCrop',         'false', 'Ten-crop testing')
-   cmd:option('-testScales',      {256,384,512}, 'Multiple scales')
+   cmd:option('-testScales',      {512,384,256}, 'Multiple scales')
    cmd:option('-saveInterval',    100,      'Save result interval')
    cmd:option('-frontModelDet',   false,   'Is front model deterministic?')
    ------------- Checkpointing options ---------------
