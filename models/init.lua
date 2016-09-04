@@ -53,7 +53,7 @@ function M.setup(opt, checkpoint)
    local optnet = require 'optnet'
    local sampleInput = torch.zeros(4,3,320,320):cuda()
    model:evaluate()
-   if frontModelDet == false then
+   if opt.frontModelDet == false then
       optnet.optimizeMemory(model, sampleInput, {inplace = true, mode = 'inference', reuseBuffers = true, removeGradParams = true})
    else
       optnet.optimizeMemory(model:get(1), sampleInput, {inplace = true, mode = 'inference', reuseBuffers = true, removeGradParams = true})
@@ -75,7 +75,7 @@ function M.setup(opt, checkpoint)
    model.accUpdateGradParameters = function() end
    model.training = function() end
    model.evaluate = function() end
-   model.parameters = 
+   model.parameters =
    function()
       local a = torch.Tensor(1)
       local b = torch.Tensor(1)
