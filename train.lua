@@ -95,7 +95,7 @@ function Trainer:test(epoch, dataloader)
 
    --Find out if there's any existing results saved
    local saveInd = 1
-   local indices = torch.ones(dataloader.__size)
+   local indices = torch.ones(dataloader.__size/3)
    for filename in paths.iterfiles('results') do
       if string.match(filename, '.t7') then
          local res = torch.load('results/' .. filename)
