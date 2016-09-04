@@ -84,7 +84,7 @@ function Trainer:train(epoch, dataloader)
    return top1Sum / N, top5Sum / N, lossSum / N
 end
 
-function Trainer:test(epoch, dataloader)
+function Trainer:test(epoch, dataloader, scale)
    -- Computes the top-1 and top-5 err on the validation set
 
    local timer = torch.Timer()
@@ -95,10 +95,16 @@ function Trainer:test(epoch, dataloader)
 
    --Find out if there's any existing results saved
    local saveInd = 1
-   local indices = torch.ones(dataloader.__size/3)
-   for filename in paths.iterfiles('results') do
+   local indices = torch.ones(dataloader.__size)
+   if not paths.dirp('results') then
+      paths.mkdir('results')
+   end
+   if not paths.dirp('results/' .. scale) then
+      paths.mkdir('results' .. scale)
+   end
+   for filename in paths.iterfiles('results/' .. scale) do
       if string.match(filename, '.t7') then
-         local res = torch.load('results/' .. filename)
+         local res = torch.load('results/' .. scale .. '/'.. filename)
          res = res[3]
          for j = 1, res:size(1) do
             indices[res[j]] = 0
@@ -107,14 +113,18 @@ function Trainer:test(epoch, dataloader)
       end
    end
    indices = indices:nonzero():squeeze()
+   if indices:nElement() == 0 then
+      return 0, 0
+   end
    collectgarbage()
 
-   local resultCount = 0
-   local results = {torch.Tensor(self.opt.saveInterval,365), torch.Tensor(self.opt.saveInterval,365), torch.Tensor(self.opt.saveInterval)}
+   local dataloaderBatchSize = dataloader.batchSize
+   local resultCount = 1
+   local results = {torch.FloatTensor(2,self.opt.saveInterval*dataloaderBatchSize,365), torch.LongTensor(self.opt.saveInterval*dataloaderBatchSize)}
 
    self.model:evaluate()
    local softmax = cudnn.SoftMax():cuda()
-   for n, sample in dataloader:run(indices) do
+   for n, sample in dataloader:run(indices, scale) do
       local dataTime = dataTimer:time().real
 
       -- Copy input and target to the GPU
@@ -144,15 +154,15 @@ function Trainer:test(epoch, dataloader)
       raw_output:div(self.opt.nStocSamples)
       prob_output:div(self.opt.nStocSamples)
 
-      resultCount = resultCount + 1
-      results[1]:select(1,resultCount):copy(raw_output:mean(1))
-      results[2]:select(1,resultCount):copy(prob_output:mean(1))
-      assert(self.index ~= -1, 'self.index cannot be -1')
-      results[2][resultCount] = self.index
+      local batchCount = self.index:size(1)
+      results[1]:select(1,1):narrow(1,resultCount,batchCount):copy(raw_output:view(raw_output:size(1)/6,6,raw_output:size(2)):mean(2):squeeze(2))
+      results[1]:select(1,2):narrow(1,resultCount,batchCount):copy(prob_output:view(prob_output:size(1)/6,6,prob_output:size(2)):mean(2):squeeze(2))
+      results[3]:narrow(1,resultCount,batchCount):copy(self.index)
+      resultCount = resultCount + batchCount
 
-      if resultCount == self.opt.saveInterval then
-         torch.save('results/' .. saveInd .. '.t7', results)
-         resultCount = 0
+      if resultCount >= self.opt.saveInterval*dataloaderBatchSize or n == size then
+         torch.save('results/' scale .. '/' .. saveInd .. '.t7', results)
+         resultCount = 1
       end
 
       print((' | Test: [%d][%d/%d]    Time %.3f  Data %.3f'):format(
@@ -209,11 +219,11 @@ function Trainer:copyInputs(sample)
       and torch.CudaTensor()
       or cutorch.createCudaHostTensor())
    self.target = self.target or torch.CudaTensor()
-   self.index = self.index or -1
+   self.index = self.index or torch.LongTensor()
 
    self.input:resize(sample.input:size()):copy(sample.input)
    self.target:resize(sample.target:size()):copy(sample.target)
-   self.index = sample.index
+   self.index:resize(sample.index:size()):copy(sample.index)
 end
 
 function Trainer:learningRate(epoch)

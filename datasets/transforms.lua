@@ -16,6 +16,7 @@ local M = {}
 function M.Compose(transforms)
    return function(input, size)
       table.insert(transforms, 1, M.Scale(size))
+      table.insert(transforms, M.SixCrop(size))
       for _, transform in ipairs(transforms) do
          input = transform(input)
       end
@@ -110,18 +111,9 @@ function M.TenCrop(size)
    end
 end
 
--- Crop to centered rectangle
-function M.APCenterCrop(size_ratio)
-   return function(input)
-      local w1 = math.ceil((input:size(3) - size_ratio*input:size(3))/2)
-      local h1 = math.ceil((input:size(2) - size_ratio*input:size(2))/2)
-      return image.crop(input, w1, h1, w1 + size_ratio*input:size(3), h1 + size_ratio*input:size(2)) -- center patch
-   end
-end
-
--- Four corner patches and center crop from image and its horizontal reflection (preserving aspect ratios)
-function M.APTenCrop(size_ratio)
-   local centerCrop = M.APCenterCrop(size_ratio)
+-- 2 corner crops and center crop from image and its horizontal reflection
+function M.SixCrop(size)
+   local centerCrop = M.CenterCrop(size)
 
    return function(input)
       local w, h = input:size(3), input:size(2)
@@ -129,10 +121,12 @@ function M.APTenCrop(size_ratio)
       local output = {}
       for _, img in ipairs{input, image.hflip(input)} do
          table.insert(output, centerCrop(img))
-         table.insert(output, image.crop(img, 0, 0, w*size_ratio, h*size_ratio))
-         table.insert(output, image.crop(img, w-w*size_ratio, 0, w, h*size_ratio))
-         table.insert(output, image.crop(img, 0, h-h*size_ratio, w*size_ratio, h))
-         table.insert(output, image.crop(img, w-w*size_ratio, h-h*size_ratio, w, h))
+         table.insert(output, image.crop(img, 0, 0, size, size))
+         if w > h then
+            table.insert(output, image.crop(img, w-size, 0, w, h))
+         else
+            table.insert(output, image.crop(img, 0, h-size, w, h))
+         end
       end
 
       -- View as mini-batch

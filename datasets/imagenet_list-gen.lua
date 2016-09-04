@@ -89,7 +89,7 @@ function M.exec(opt, cacheFile)
                                                    {valDir, "places365_val.txt"}, {testDir, 'places365_test.txt'}})
 
    print(" | finding all training images")
-   local trainImagePath, trainImageClass = findImages({{trainDir, "places365_train_challenge_minus_extraval.txt"}})
+   local trainImagePath, trainImageClass = findImages({{trainDir, "places365_val.txt"}})
 
    local info = {
       basedir = opt.data,

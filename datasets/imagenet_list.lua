@@ -96,7 +96,7 @@ function ImagenetDataset:preprocess()
       return t.Compose{
          --t.Scale(256),
          t.ColorNormalize(meanstd),
-         t.APTenCrop(0.9),
+         --t.SixCrop(),
          --Crop(224),
       }
    else
