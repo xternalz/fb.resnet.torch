@@ -36,15 +36,21 @@ local function findImages(dataInfo)
          local line = f:read('*line')
          if not line then break end
 
-         local spaceInd = string.find(line, " ")
-         local bpath = line:sub(1,spaceInd-1)
-         if bpath:sub(1,1) == '/' then
-            bpath = bpath:sub(2,bpath:len())
+         local path = nil
+         local classId = nil
+         if not string.match(dataInfo[d][2], '_test') then
+            local spaceInd = string.find(line, " ")
+            local bpath = line:sub(1,spaceInd-1)
+            if bpath:sub(1,1) == '/' then
+               bpath = bpath:sub(2,bpath:len())
+            end
+            path = paths.concat(dir, bpath)
+            classId = tonumber(line:sub(spaceInd+1, line:len())) + 1
+            assert(classId, 'class not found: ' .. path)
+         else
+            path = paths.concat(dir, line)
+            classId = -1
          end
-         local path = paths.concat(dir, bpath)
-
-         local classId = tonumber(line:sub(spaceInd+1, line:len())) + 1
-         assert(classId, 'class not found: ' .. path)
 
          imagePaths:insert(path)
          imageClasses:insert(classId)
