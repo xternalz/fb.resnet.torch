@@ -26,7 +26,7 @@ function Trainer:__init(model, criterion, opt, optimState)
       weightDecay = opt.weightDecay,
    }
    self.opt = opt
-   self.params, self.gradParams = model:getParameters()
+   --self.params, self.gradParams = model:getParameters()
 end
 
 function Trainer:train(epoch, dataloader)
@@ -100,7 +100,7 @@ function Trainer:test(epoch, dataloader, scale)
       paths.mkdir('results')
    end
    if not paths.dirp('results/' .. scale) then
-      paths.mkdir('results' .. scale)
+      paths.mkdir('results/' .. scale)
    end
    for filename in paths.iterfiles('results/' .. scale) do
       if string.match(filename, '.t7') then

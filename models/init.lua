@@ -75,12 +75,8 @@ function M.setup(opt, checkpoint)
    model.accUpdateGradParameters = function() end
    model.training = function() end
    model.evaluate = function() end
-   model.parameters =
-   function()
-      local a = torch.CudaTensor(1)
-      local b = torch.CudaTensor(1)
-      return {a},{b}
-   end
+   local a = torch.CudaTensor(1)
+   model.parameters = function() return {a} {a} end
 
    -- First remove any DataParallelTable
    if torch.type(model) == 'nn.DataParallelTable' then
