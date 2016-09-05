@@ -107,7 +107,9 @@ function Trainer:test(epoch, dataloader, scale)
          local res = torch.load('results/' .. scale .. '/'.. filename)
          res = res[3]
          for j = 1, res:size(1) do
-            indices[res[j]] = 0
+            if res[j] ~= -1 then
+               indices[res[j]] = 0
+            end
          end
          saveInd = saveInd + 1
       end
