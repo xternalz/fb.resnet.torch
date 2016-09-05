@@ -137,10 +137,14 @@ function Trainer:test(epoch, dataloader, scale)
       local prob_output = nil
       for i = 1, self.opt.nStocSamples do
          local output = nil
-         if i == 1 or self.opt.frontModelDet == false then
+         if self.opt.frontModelDet == false then
             output = self.model:forward(self.input)
          else
-            output = self.model:get(2):forward(self.model:get(1).output)
+            if i == 1 then
+               output = self.model:get(2):forward(self.model:get(1):forward(self.input))
+            else
+               output = self.model:get(2):forward(self.model:get(1).output)
+            end
          end
          if raw_output == nil then
             raw_output = output:float():clone()

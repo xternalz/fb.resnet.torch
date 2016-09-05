@@ -34,7 +34,7 @@ function M.setup(opt, checkpoint)
 
    local model_classify = model
    if model:size() == 2 then
-      model_classify:get(2)
+      model_classify = model_classify:get(2)
    end
    local poolInd = model_classify:size()-2
    model_classify:remove(poolInd)
@@ -57,7 +57,7 @@ function M.setup(opt, checkpoint)
       optnet.optimizeMemory(model, sampleInput, {inplace = true, mode = 'inference', reuseBuffers = true, removeGradParams = true})
    else
       optnet.optimizeMemory(model:get(1), sampleInput, {inplace = true, mode = 'inference', reuseBuffers = true, removeGradParams = true})
-      local sampleInput2 = model:get(1).output
+      local sampleInput2 = model:get(1):forward(sampleInput)
       optnet.optimizeMemory(model:get(2), sampleInput2, {inplace = true, mode = 'inference', reuseBuffers = true, removeGradParams = true})
    end
    model:apply(function(m)
@@ -68,15 +68,29 @@ function M.setup(opt, checkpoint)
    model:evaluate()
 
    -- Add front resnet to model
-   model.backward = function() end
-   model.updateGradInput = function() end
-   model.accGradParameters = function() end
-   model.accUpdateGradParameters = function() end
-   model.accUpdateGradParameters = function() end
-   model.training = function() end
-   model.evaluate = function() end
-   local a = torch.CudaTensor(1)
-   model.parameters = function() return {a}, {a} end
+   if opt.frontModelDet == false then
+      model.backward = function() end
+      model.updateGradInput = function() end
+      model.accGradParameters = function() end
+      model.accUpdateGradParameters = function() end
+      model.accUpdateGradParameters = function() end
+      model.training = function() end
+      model.evaluate = function() end
+      local a = torch.CudaTensor(1)
+      model.parameters = function() return {a}, {a} end
+   else
+      for i = 1, 2 do
+         model:get(i).backward = function() end
+         model:get(i).updateGradInput = function() end
+         model:get(i).accGradParameters = function() end
+         model:get(i).accUpdateGradParameters = function() end
+         model:get(i).accUpdateGradParameters = function() end
+         model:get(i).training = function() end
+         model:get(i).evaluate = function() end
+         local a = torch.CudaTensor(1)
+         model:get(i).parameters = function() return {a}, {a} end
+      end
+   end
 
    -- First remove any DataParallelTable
    if torch.type(model) == 'nn.DataParallelTable' then
@@ -128,15 +142,29 @@ function M.setup(opt, checkpoint)
       local gpus = torch.range(1, opt.nGPU):totable()
       local fastest, benchmark = cudnn.fastest, cudnn.benchmark
 
-      local dpt = nn.DataParallelTable(1, true, true)
-         :add(model, gpus)
-         :threads(function()
-            local cudnn = require 'cudnn'
-            cudnn.fastest, cudnn.benchmark = fastest, benchmark
-         end)
-      dpt.gradInput = nil
-
-      model = dpt:cuda()
+      if opt.frontModelDet == false then
+         local dpt = nn.DataParallelTable(1, true, true)
+            :add(model, gpus)
+            :threads(function()
+               local cudnn = require 'cudnn'
+               cudnn.fastest, cudnn.benchmark = fastest, benchmark
+            end)
+         dpt.gradInput = nil
+         model = dpt:cuda()
+      else
+         local models = nn.Sequential()
+         for i = 1, 2 do
+            local dpt = nn.DataParallelTable(1, true, true)
+               :add(model, gpus)
+               :threads(function()
+                  local cudnn = require 'cudnn'
+                  cudnn.fastest, cudnn.benchmark = fastest, benchmark
+               end)
+            dpt.gradInput = nil
+            models:add(dpt:cuda())
+         end
+         model = models
+      end
    end
 
    local criterion = nn.CrossEntropyCriterion():cuda()
