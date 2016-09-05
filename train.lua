@@ -119,9 +119,9 @@ function Trainer:test(epoch, dataloader, scale)
       return 0, 0
    end
    collectgarbage()
-   size = indices:size(1)
 
    local dataloaderBatchSize = dataloader.batchSize
+   size = math.ceil(indices:size(1) / dataloaderBatchSize)
    local resultCount = 1
    local results = {torch.FloatTensor(2,self.opt.saveInterval*dataloaderBatchSize,365), torch.LongTensor(self.opt.saveInterval*dataloaderBatchSize):fill(-1)}
 
