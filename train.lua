@@ -126,7 +126,7 @@ function Trainer:test(epoch, dataloader, scale)
    local results = {torch.FloatTensor(2,self.opt.saveInterval*dataloaderBatchSize,365), torch.LongTensor(self.opt.saveInterval*dataloaderBatchSize):fill(-1)}
 
    self.model:evaluate()
-   local softmax = cudnn.SoftMax():cuda()
+   local softmax = cudnn.SpatialSoftMax():cuda()
    for n, sample in dataloader:run(indices, scale) do
       local dataTime = dataTimer:time().real
 
