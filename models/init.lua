@@ -66,6 +66,7 @@ function M.setup(opt, checkpoint)
          m.train = true
       end
    end)
+   M.shareDropoutNoise(model)
 
    -- Add front resnet to model
    model.backward = function() end
@@ -198,5 +199,27 @@ function M.shareGradInput(model)
       m.gradInput = torch.CudaTensor(cache[i % 2], 1, 0)
    end
 end
+
+function M.shareDropoutNoise(model)
+   local function sharingKey(m)
+      local key = torch.type(m)
+      if m.__shareDropoutNoise then
+         key = key .. ':' .. m.__shareDropoutNoise
+      end
+      return key
+   end
+
+   -- Share dropoutNoise for memory efficient forward
+   local cache = {}
+   model:apply(function(m)
+      local moduleType = torch.type(m)
+      if torch.isTensor(m.noise) then
+         local key = sharingKey(m)
+         if cache[key] == nil then
+            cache[key] = torch.CudaStorage(1)
+         end
+         m.noise = torch.CudaTensor(cache[key], 1, 0)
+      end
+   end)
 
 return M
