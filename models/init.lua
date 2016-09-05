@@ -221,5 +221,6 @@ function M.shareDropoutNoise(model)
          m.noise = torch.CudaTensor(cache[key], 1, 0)
       end
    end)
+end
 
 return M
