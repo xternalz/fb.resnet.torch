@@ -15,11 +15,11 @@ local M = {}
 
 function M.Compose(transforms)
    return function(input, size)
-      table.insert(transforms, 1, M.Scale(size))
-      table.insert(transforms, M.SixCrop(size))
+      input = M.Scale(size)(input)
       for _, transform in ipairs(transforms) do
          input = transform(input)
       end
+      input = M.SixCrop(size)(input)
       return input
    end
 end
