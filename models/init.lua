@@ -46,8 +46,8 @@ function M.setup(opt, checkpoint)
 
    -- convert FC to conv layer
    local fc = model_classify:get(model_classify:size())
-   model_classify:insert(cudnn.SpatialConvolution(fc.weight:size(2),fc.weight:size(1),1,1,0,0),model_classify:size())
-   model_classify:get(model_classify:size()-1).weight:copy(model_classify:get(model_classify:size()).weight)
+   model_classify:insert(cudnn.SpatialConvolution(fc.weight:size(2),fc.weight:size(1),1,1,1,1,0,0),model_classify:size())
+   model_classify:get(model_classify:size()-1).weight:select(3,1):select(3,1):copy(model_classify:get(model_classify:size()).weight)
    model_classify:get(model_classify:size()-1).bias:copy(model_classify:get(model_classify:size()).bias)
    model_classify:remove(model_classify:size())
 
