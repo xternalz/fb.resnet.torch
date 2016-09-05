@@ -44,15 +44,15 @@ function M.setup(opt, checkpoint)
    model_classify:insert(nn.View(model_classify:get(model_classify:size()).weight:size(2),-1,1):setNumInputDims(3), poolInd)
    model_classify:remove(model_classify:size()-1)
 
+   model:cuda()
+   local optnet = require 'optnet'
+   local sampleInput = torch.zeros(4,3,320,320):cuda()
+   model:evaluate()
    model:apply(function(m)
       if torch.type(m) == 'nn.Dropout' then
          m.train = true
       end
    end)
-   model:cuda()
-   local optnet = require 'optnet'
-   local sampleInput = torch.zeros(4,3,320,320):cuda()
-   model:evaluate()
    if opt.frontModelDet == false then
       optnet.optimizeMemory(model, sampleInput, {inplace = true, mode = 'inference', reuseBuffers = true, removeGradParams = true})
    else
@@ -60,25 +60,24 @@ function M.setup(opt, checkpoint)
       local sampleInput2 = model:get(1):forward(sampleInput)
       optnet.optimizeMemory(model:get(2), sampleInput2, {inplace = true, mode = 'inference', reuseBuffers = true, removeGradParams = true})
    end
+   model:evaluate()
    model:apply(function(m)
       if torch.type(m) == 'nn.Dropout' then
          m.train = true
       end
    end)
-   model:evaluate()
 
    -- Add front resnet to model
-   if opt.frontModelDet == false then
-      model.backward = function() end
-      model.updateGradInput = function() end
-      model.accGradParameters = function() end
-      model.accUpdateGradParameters = function() end
-      model.accUpdateGradParameters = function() end
-      model.training = function() end
-      model.evaluate = function() end
-      local a = torch.CudaTensor(1)
-      model.parameters = function() return {a}, {a} end
-   else
+   model.backward = function() end
+   model.updateGradInput = function() end
+   model.accGradParameters = function() end
+   model.accUpdateGradParameters = function() end
+   model.accUpdateGradParameters = function() end
+   model.training = function() end
+   model.evaluate = function() end
+   local a = torch.CudaTensor(1)
+   model.parameters = function() return {a}, {a} end
+   if opt.frontModelDet == true then
       for i = 1, 2 do
          model:get(i).backward = function() end
          model:get(i).updateGradInput = function() end
