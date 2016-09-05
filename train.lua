@@ -148,14 +148,14 @@ function Trainer:test(epoch, dataloader, scale)
             end
          end
          if raw_output == nil then
-            raw_output = output:float():clone()
+            raw_output = output:mean(3):mean(4):squeeze(3):squeeze(3):float():clone()
          else
-            raw_output:add(output:float())
+            raw_output:add(output:mean(3):mean(4):squeeze(3):squeeze(3):float())
          end
          if prob_output == nil then
-            prob_output = softmax:forward(output):float():clone()
+            prob_output = softmax:forward(output):mean(3):mean(4):squeeze(3):squeeze(3):float():clone()
          else
-            prob_output:add(softmax:forward(output):float())
+            prob_output:add(softmax:forward(output):mean(3):mean(4):squeeze(3):squeeze(3):float())
          end
       end
       raw_output:div(self.opt.nStocSamples)
