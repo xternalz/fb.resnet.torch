@@ -119,6 +119,7 @@ function Trainer:test(epoch, dataloader, scale)
       return 0, 0
    end
    collectgarbage()
+   size = indices:size(1)
 
    local dataloaderBatchSize = dataloader.batchSize
    local resultCount = 1
