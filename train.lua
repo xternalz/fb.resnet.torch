@@ -120,7 +120,7 @@ function Trainer:test(epoch, dataloader, scale)
 
    local dataloaderBatchSize = dataloader.batchSize
    local resultCount = 1
-   local results = {torch.FloatTensor(2,self.opt.saveInterval*dataloaderBatchSize,365), torch.LongTensor(self.opt.saveInterval*dataloaderBatchSize)}
+   local results = {torch.FloatTensor(2,self.opt.saveInterval*dataloaderBatchSize,365), torch.LongTensor(self.opt.saveInterval*dataloaderBatchSize):fill(-1)}
 
    self.model:evaluate()
    local softmax = cudnn.SoftMax():cuda()
@@ -157,12 +157,13 @@ function Trainer:test(epoch, dataloader, scale)
       local batchCount = self.index:size(1)
       results[1]:select(1,1):narrow(1,resultCount,batchCount):copy(raw_output:view(raw_output:size(1)/6,6,raw_output:size(2)):mean(2):squeeze(2))
       results[1]:select(1,2):narrow(1,resultCount,batchCount):copy(prob_output:view(prob_output:size(1)/6,6,prob_output:size(2)):mean(2):squeeze(2))
-      results[3]:narrow(1,resultCount,batchCount):copy(self.index)
+      results[2]:narrow(1,resultCount,batchCount):copy(self.index)
       resultCount = resultCount + batchCount
 
       if resultCount >= self.opt.saveInterval*dataloaderBatchSize or n == size then
          torch.save('results/' .. scale .. '/' .. saveInd .. '.t7', results)
          resultCount = 1
+         results[2]:fill(-1)
       end
 
       print((' | Test: [%d][%d/%d]    Time %.3f  Data %.3f'):format(
