@@ -155,7 +155,7 @@ function M.setup(opt, checkpoint)
          local models = nn.Sequential()
          for i = 1, 2 do
             local dpt = nn.DataParallelTable(1, true, true)
-               :add(model, gpus)
+               :add(model:get(i), gpus)
                :threads(function()
                   local cudnn = require 'cudnn'
                   cudnn.fastest, cudnn.benchmark = fastest, benchmark
