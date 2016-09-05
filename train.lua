@@ -105,7 +105,7 @@ function Trainer:test(epoch, dataloader, scale)
    for filename in paths.iterfiles('results/' .. scale) do
       if string.match(filename, '.t7') then
          local res = torch.load('results/' .. scale .. '/'.. filename)
-         res = res[3]
+         res = res[2]
          for j = 1, res:size(1) do
             if res[j] ~= -1 then
                indices[res[j]] = 0
