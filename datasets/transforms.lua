@@ -138,6 +138,35 @@ function M.SixCrop(size)
    end
 end
 
+-- 2 corner crops and center crop from image and its horizontal reflection
+function M.TwoCrop(size)
+   local centerCrop = M.CenterCrop(size)
+
+   return function(input)
+      local w, h = input:size(3), input:size(2)
+
+      local output = {}
+      for _, img in ipairs{input, image.hflip(input)} do
+         if w > h then
+            local stepsize = math.floor((w-size)/3 + 0.5)
+            table.insert(output, image.crop(img, stepsize, 0, stepsize+size, h))
+            table.insert(output, image.crop(img, stepsize*2, 0, stepsize*2+size, h))
+         else
+            local stepsize = math.floor((h-size)/3 + 0.5)
+            table.insert(output, image.crop(img, 0, stepsize, w, stepsize+size))
+            table.insert(output, image.crop(img, 0, stepsize*2, w, stepsize*2+size))
+         end
+      end
+
+      -- View as mini-batch
+      for i, img in ipairs(output) do
+         output[i] = img:view(1, img:size(1), img:size(2), img:size(3))
+      end
+
+      return input.cat(output, 1)
+   end
+end
+
 -- Resized with shorter side randomly sampled from [minSize, maxSize] (ResNet-style)
 function M.RandomScale(minSize, maxSize)
    return function(input)
