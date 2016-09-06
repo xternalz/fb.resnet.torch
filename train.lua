@@ -162,8 +162,8 @@ function Trainer:test(epoch, dataloader, scale)
       prob_output:div(self.opt.nStocSamples)
 
       local batchCount = self.index:size(1)
-      results[1]:select(1,1):narrow(1,resultCount,batchCount):copy(raw_output:view(raw_output:size(1)/6,6,raw_output:size(2)):mean(2):squeeze(2))
-      results[1]:select(1,2):narrow(1,resultCount,batchCount):copy(prob_output:view(prob_output:size(1)/6,6,prob_output:size(2)):mean(2):squeeze(2))
+      results[1]:select(1,1):narrow(1,resultCount,batchCount):copy(raw_output:view(raw_output:size(1)/self.opt.nCrop,self.opt.nCrop,raw_output:size(2)):mean(2):squeeze(2))
+      results[1]:select(1,2):narrow(1,resultCount,batchCount):copy(prob_output:view(prob_output:size(1)/self.opt.nCrop,self.opt.nCrop,prob_output:size(2)):mean(2):squeeze(2))
       results[2]:narrow(1,resultCount,batchCount):copy(self.index)
       resultCount = resultCount + batchCount
 

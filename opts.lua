@@ -35,6 +35,7 @@ function M.parse(arg)
    cmd:option('-testScales',      {384,320,256}, 'Multiple scales')
    cmd:option('-saveInterval',    100,      'Save result interval')
    cmd:option('-frontModelDet',   false,   'Is front model deterministic?')
+   cmd:option('-nCrop',           6,       'Is front model deterministic?')
    ------------- Checkpointing options ---------------
    cmd:option('-save',            'checkpoints', 'Directory in which to save checkpoints')
    cmd:option('-resume',          'none',        'Resume from the latest checkpoint in this directory')

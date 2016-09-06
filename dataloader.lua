@@ -51,7 +51,7 @@ function DataLoader:__init(imageInfo, opt, split)
    else
       threads, sizes = Threads(opt.nThreads, init, main)
    end
-   self.nCrops = 6
+   self.nCrops = opt.nCrop
    self.threads = threads
    self.__size = sizes[1][1]
    self.__size = self.__size
