@@ -36,20 +36,20 @@ function M.setup(opt, checkpoint)
    if model:size() == 2 then
       model_classify = model_classify:get(2)
    end
-   --[[local poolInd = model_classify:size()-2
+   local poolInd = model_classify:size()-2
    model_classify:remove(poolInd)
    model_classify:insert(nn.Squeeze(2,2), poolInd)
    model_classify:insert(nn.Mean(3), poolInd)
    model_classify:insert(nn.Squeeze(3,3), poolInd)
-   model_classify:insert(nn.View(model_classify:get(model_classify:size()).weight:size(2),-1,1):setNumInputDims(3), poolInd)--]]
+   model_classify:insert(nn.View(model_classify:get(model_classify:size()).weight:size(2),-1,1):setNumInputDims(3), poolInd)
    model_classify:remove(model_classify:size()-1)
 
    -- convert FC to conv layer
-   local fc = model_classify:get(model_classify:size())
+   --[[local fc = model_classify:get(model_classify:size())
    model_classify:insert(cudnn.SpatialConvolution(fc.weight:size(2),fc.weight:size(1),1,1,1,1,0,0),model_classify:size())
    model_classify:get(model_classify:size()-1).weight:select(3,1):select(3,1):copy(model_classify:get(model_classify:size()).weight)
    model_classify:get(model_classify:size()-1).bias:copy(model_classify:get(model_classify:size()).bias)
-   model_classify:remove(model_classify:size())
+   model_classify:remove(model_classify:size())--]]
 
    model:cuda()
    local optnet = require 'optnet'
